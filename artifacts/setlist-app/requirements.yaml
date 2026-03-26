@@ -1,0 +1,10 @@
+packages:
+  "@hello-pangea/dnd": "Robust drag and drop library for reordering setlist songs"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for intelligently merging tailwind classes"
+  "date-fns": "For formatting setlist creation dates"
+
+images:
+  - path: "artifacts/setlist-app/public/images/hero-bg.png"
+    description: "Dark, moody atmospheric concert stage background with subtle electric cyan and deep violet light leaks, out of focus, professional music industry vibe, extremely minimal"
+    aspect_ratio: "16:9"

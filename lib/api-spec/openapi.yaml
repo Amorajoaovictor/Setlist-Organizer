@@ -1,22 +1,24 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Band Setlist Organizer API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: setlists
+    description: Setlist management
+  - name: spotify
+    description: Spotify track search
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +26,212 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /setlists:
+    get:
+      operationId: listSetlists
+      tags: [setlists]
+      summary: List all setlists
+      responses:
+        "200":
+          description: List of setlists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Setlist"
+    post:
+      operationId: createSetlist
+      tags: [setlists]
+      summary: Create a new setlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSetlistInput"
+      responses:
+        "201":
+          description: Created setlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Setlist"
+
+  /setlists/{id}:
+    get:
+      operationId: getSetlist
+      tags: [setlists]
+      summary: Get a setlist with its songs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Setlist with songs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SetlistWithSongs"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateSetlist
+      tags: [setlists]
+      summary: Update setlist name
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSetlistInput"
+      responses:
+        "200":
+          description: Updated setlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Setlist"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteSetlist
+      tags: [setlists]
+      summary: Delete a setlist
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /setlists/{id}/songs:
+    post:
+      operationId: addSongToSetlist
+      tags: [setlists]
+      summary: Add a song to a setlist
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddSongInput"
+      responses:
+        "201":
+          description: Added song
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SetlistSong"
+
+  /setlists/{id}/songs/{songId}:
+    delete:
+      operationId: removeSongFromSetlist
+      tags: [setlists]
+      summary: Remove a song from a setlist
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /setlists/{id}/songs/reorder:
+    put:
+      operationId: reorderSetlistSongs
+      tags: [setlists]
+      summary: Reorder songs in a setlist
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderSongsInput"
+      responses:
+        "200":
+          description: Reordered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /spotify/search:
+    get:
+      operationId: searchSpotifyTracks
+      tags: [spotify]
+      summary: Search for tracks on Spotify
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SpotifyTrack"
+        "500":
+          description: Spotify API error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +242,152 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
+
+    Setlist:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        totalDurationMs:
+          type: integer
+        songCount:
+          type: integer
+      required:
+        - id
+        - name
+        - createdAt
+        - totalDurationMs
+        - songCount
+
+    SetlistWithSongs:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        songs:
+          type: array
+          items:
+            $ref: "#/components/schemas/SetlistSong"
+      required:
+        - id
+        - name
+        - createdAt
+        - songs
+
+    SetlistSong:
+      type: object
+      properties:
+        id:
+          type: integer
+        setlistId:
+          type: integer
+        position:
+          type: integer
+        title:
+          type: string
+        artist:
+          type: string
+        durationMs:
+          type: integer
+        spotifyId:
+          type: string
+        albumArt:
+          type: string
+      required:
+        - id
+        - setlistId
+        - position
+        - title
+        - artist
+        - durationMs
+
+    CreateSetlistInput:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    UpdateSetlistInput:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    AddSongInput:
+      type: object
+      properties:
+        title:
+          type: string
+        artist:
+          type: string
+        durationMs:
+          type: integer
+        spotifyId:
+          type: string
+        albumArt:
+          type: string
+      required:
+        - title
+        - artist
+        - durationMs
+
+    ReorderSongsInput:
+      type: object
+      properties:
+        songIds:
+          type: array
+          items:
+            type: integer
+          description: Song IDs in the new order
+      required:
+        - songIds
+
+    SpotifyTrack:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        artist:
+          type: string
+        durationMs:
+          type: integer
+        albumArt:
+          type: string
+        album:
+          type: string
+      required:
+        - id
+        - title
+        - artist
+        - durationMs
