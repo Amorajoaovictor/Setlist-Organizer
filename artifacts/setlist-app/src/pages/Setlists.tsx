@@ -4,7 +4,6 @@ import { Plus, ListMusic, Calendar, Clock, Trash2, ChevronRight, Music } from "l
 import { useListSetlists, useCreateSetlist, useDeleteSetlist, getListSetlistsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Header } from "@/components/Header";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { Modal } from "@/components/Modal";
@@ -50,8 +49,6 @@ export default function Setlists() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
-      
       <main className="flex-1 relative">
         {/* Background Image Layer */}
         <div className="absolute inset-0 z-0 pointer-events-none opacity-20">

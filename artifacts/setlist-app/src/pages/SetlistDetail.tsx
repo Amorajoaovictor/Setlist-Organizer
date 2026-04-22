@@ -16,7 +16,6 @@ import {
   getListSetlistsQueryKey
 } from "@workspace/api-client-react";
 
-import { Header } from "@/components/Header";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { SpotifySearch } from "@/components/SpotifySearch";
@@ -40,7 +39,6 @@ export default function SetlistDetail() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header />
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="w-12 h-12 animate-spin text-primary opacity-50" />
         </div>
@@ -51,7 +49,6 @@ export default function SetlistDetail() {
   if (isError || !setlist) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header />
         <div className="flex-1 flex items-center justify-center flex-col gap-4 text-destructive">
           <AlertCircle className="w-16 h-16" />
           <h2 className="text-2xl font-bold">Setlist not found</h2>
@@ -140,8 +137,6 @@ export default function SetlistDetail() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
-      
       {/* Background Hero */}
       <div className="absolute top-0 left-0 w-full h-96 z-0 pointer-events-none opacity-30">
         <img 
