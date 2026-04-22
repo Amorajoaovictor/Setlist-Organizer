@@ -107,13 +107,13 @@ export default function Setlists() {
                 <div key={setlist.id} className="group relative">
                   <Link 
                     href={`/setlists/${setlist.id}`}
-                    className="block h-full glass-panel rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_10px_40px_-10px_rgba(0,229,255,0.15)]"
+                    className="block h-full glass-panel rounded-2xl p-6 transition-all duration-300 active:-translate-y-1 active:border-primary/30 active:shadow-[0_10px_40px_-10px_rgba(0,229,255,0.15)]"
                   >
                     <div className="flex justify-between items-start mb-6">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-secondary to-background border border-white/10 flex items-center justify-center shadow-inner group-hover:from-primary/20 group-hover:to-background group-hover:text-primary transition-all">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-secondary to-background border border-white/10 flex items-center justify-center shadow-inner group-active:from-primary/20 group-active:to-background group-active:text-primary transition-all">
                         <Music className="w-6 h-6" />
                       </div>
-                      <div className="flex items-center gap-1 text-muted-foreground group-hover:text-primary transition-colors">
+                      <div className="flex items-center gap-1 text-muted-foreground group-active:text-primary transition-colors">
                         <span className="text-sm font-medium">View</span>
                         <ChevronRight className="w-4 h-4" />
                       </div>
@@ -143,7 +143,7 @@ export default function Setlists() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="opacity-0 group-hover:opacity-100 hover:bg-destructive/20 hover:text-destructive h-8 w-8 rounded-full"
+                      className="bg-destructive/10 text-destructive active:bg-destructive/30 h-8 w-8 rounded-full"
                       onClick={(e) => {
                         e.preventDefault();
                         setDeleteConfirmId(setlist.id);

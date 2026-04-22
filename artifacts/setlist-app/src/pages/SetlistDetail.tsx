@@ -186,13 +186,13 @@ export default function SetlistDetail() {
                 <Button 
                   size="icon" 
                   variant="ghost" 
-                  className="opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
+                  className="rounded-full"
                   onClick={() => {
                     setEditName(setlist.name);
                     setIsEditingName(true);
                   }}
                 >
-                  <Edit2 className="w-5 h-5 text-muted-foreground hover:text-primary" />
+                  <Edit2 className="w-5 h-5 text-muted-foreground active:text-primary" />
                 </Button>
               </div>
             )}
@@ -249,13 +249,13 @@ export default function SetlistDetail() {
                                 "flex items-center gap-4 p-3 pr-4 rounded-xl transition-all duration-200 group border",
                                 snapshot.isDragging 
                                   ? "bg-secondary border-primary/50 shadow-2xl shadow-primary/20 z-50 scale-[1.02]" 
-                                  : "glass-panel hover:bg-white/[0.08]"
+                                  : "glass-panel active:bg-white/[0.08]"
                               )}
                               style={provided.draggableProps.style}
                             >
                               <div 
                                 {...provided.dragHandleProps}
-                                className="p-2 -ml-2 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
+                                className="p-2 -ml-2 text-muted-foreground active:text-foreground cursor-grab active:cursor-grabbing"
                               >
                                 <GripVertical className="w-5 h-5" />
                               </div>
@@ -284,7 +284,7 @@ export default function SetlistDetail() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="opacity-0 group-hover:opacity-100 hover:bg-destructive/20 hover:text-destructive transition-all rounded-full h-10 w-10 ml-2 flex-shrink-0"
+                                className="bg-destructive/10 text-destructive active:bg-destructive/30 transition-all rounded-full h-10 w-10 ml-2 flex-shrink-0"
                                 onClick={() => handleRemoveSong(song.id)}
                                 disabled={removeSongMutation.isPending}
                               >

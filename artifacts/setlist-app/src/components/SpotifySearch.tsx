@@ -84,7 +84,7 @@ export function SpotifySearch({ onAddTrack, isAdding }: SpotifySearchProps) {
           {tracks?.map((track) => (
             <div 
               key={track.id} 
-              className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors group border border-transparent hover:border-white/5"
+              className="flex items-center gap-3 p-2 rounded-xl active:bg-white/5 transition-colors group border border-transparent active:border-white/5"
             >
               {track.albumArt ? (
                 <img 
@@ -99,7 +99,7 @@ export function SpotifySearch({ onAddTrack, isAdding }: SpotifySearchProps) {
               )}
               
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                <p className="font-semibold text-sm text-foreground truncate group-active:text-primary transition-colors">
                   {track.title}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
@@ -114,7 +114,7 @@ export function SpotifySearch({ onAddTrack, isAdding }: SpotifySearchProps) {
                 <Button 
                   size="icon" 
                   variant="secondary" 
-                  className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 hover:bg-primary hover:text-primary-foreground transition-all"
+                  className="h-8 w-8 rounded-full bg-primary/20 text-primary active:bg-primary active:text-primary-foreground transition-all"
                   onClick={() => onAddTrack(track)}
                   disabled={isAdding}
                 >
