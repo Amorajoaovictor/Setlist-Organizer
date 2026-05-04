@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Music, AudioWaveform, LogOut, LogIn } from "lucide-react";
-import { useAuth } from "@workspace/replit-auth-web";
+import { useAuth } from "@workspace/auth-web";
 
 export function Header() {
   const { user, isLoading, isAuthenticated, login, logout } = useAuth();
