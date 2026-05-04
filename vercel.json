@@ -1,0 +1,6 @@
+{
+  "installCommand": "pnpm install",
+  "buildCommand": "pnpm --filter @workspace/setlist-app run build",
+  "outputDirectory": "artifacts/setlist-app/dist/public",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
