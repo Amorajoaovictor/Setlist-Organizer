@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Search, Plus, Music, Loader2, AlertCircle } from "lucide-react";
-import { useSearchSpotifyTracks } from "@workspace/api-client-react";
+import {
+  getSearchSpotifyTracksQueryKey,
+  useSearchSpotifyTracks,
+} from "@workspace/api-client-react";
 import { Input } from "./Input";
 import { Button } from "./Button";
 import { formatDuration } from "@/lib/utils";
@@ -25,6 +28,7 @@ export function SpotifySearch({ onAddTrack, isAdding }: SpotifySearchProps) {
     { q: debouncedQuery },
     {
       query: {
+        queryKey: getSearchSpotifyTracksQueryKey({ q: debouncedQuery }),
         enabled: debouncedQuery.length > 2,
         staleTime: 1000 * 60 * 5, // 5 mins
       }

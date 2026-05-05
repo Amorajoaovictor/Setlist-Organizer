@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["src/**/*"],
+  "include": ["next-env.d.ts", "src/**/*", ".next/types/**/*.ts"],
   "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
   "compilerOptions": {
     "noEmit": true,
@@ -9,7 +9,7 @@
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "moduleResolution": "bundler",
-    "types": ["node", "vite/client"],
+    "types": ["node"],
     "paths": {
       "@/*": ["./src/*"]
     }
@@ -19,7 +19,10 @@
       "path": "../../lib/api-client-react"
     },
     {
-      "path": "../../lib/replit-auth-web"
+      "path": "../../lib/db"
+    },
+    {
+      "path": "../../lib/api-zod"
     }
   ]
 }

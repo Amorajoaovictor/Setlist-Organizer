@@ -1,26 +1,31 @@
 import { Router, type IRouter } from "express";
-import { db, setlistsTable, setlistSongsTable } from "@workspace/db";
-import { eq, sql, asc } from "drizzle-orm";
+import { db } from "@workspace/db";
 import { z } from "zod/v4";
+import lyricsRouter from "./lyrics";
 
 const router: IRouter = Router();
 
+router.use("/:id/songs/:songId/lyrics", lyricsRouter);
+
 router.get("/", async (req, res) => {
   try {
-    const rows = await db
-      .select({
-        id: setlistsTable.id,
-        name: setlistsTable.name,
-        createdAt: setlistsTable.createdAt,
-        songCount: sql<number>`count(${setlistSongsTable.id})::int`,
-        totalDurationMs: sql<number>`coalesce(sum(${setlistSongsTable.durationMs}), 0)::int`,
-      })
-      .from(setlistsTable)
-      .leftJoin(setlistSongsTable, eq(setlistSongsTable.setlistId, setlistsTable.id))
-      .groupBy(setlistsTable.id)
-      .orderBy(asc(setlistsTable.createdAt));
+    const rows = await db.setlist.findMany({
+      include: { songs: true },
+      orderBy: { createdAt: "asc" },
+    });
 
-    res.json(rows);
+    res.json(
+      rows.map((setlist) => ({
+        id: setlist.id,
+        name: setlist.name,
+        createdAt: setlist.createdAt,
+        songCount: setlist.songs.length,
+        totalDurationMs: setlist.songs.reduce(
+          (total, song) => total + song.durationMs,
+          0,
+        ),
+      })),
+    );
   } catch (err) {
     req.log.error({ err }, "Failed to list setlists");
     res.status(500).json({ error: "Internal server error" });
@@ -36,10 +41,9 @@ router.post("/", async (req, res) => {
   }
 
   try {
-    const [setlist] = await db
-      .insert(setlistsTable)
-      .values({ name: parsed.data.name })
-      .returning();
+    const setlist = await db.setlist.create({
+      data: { name: parsed.data.name },
+    });
 
     res.status(201).json({
       ...setlist,
@@ -60,23 +64,17 @@ router.get("/:id", async (req, res) => {
   }
 
   try {
-    const [setlist] = await db
-      .select()
-      .from(setlistsTable)
-      .where(eq(setlistsTable.id, id));
+    const setlist = await db.setlist.findUnique({
+      where: { id },
+      include: { songs: { orderBy: { position: "asc" } } },
+    });
 
     if (!setlist) {
       res.status(404).json({ error: "Setlist not found" });
       return;
     }
 
-    const songs = await db
-      .select()
-      .from(setlistSongsTable)
-      .where(eq(setlistSongsTable.setlistId, id))
-      .orderBy(asc(setlistSongsTable.position));
-
-    res.json({ ...setlist, songs });
+    res.json(setlist);
   } catch (err) {
     req.log.error({ err }, "Failed to get setlist");
     res.status(500).json({ error: "Internal server error" });
@@ -98,18 +96,18 @@ router.patch("/:id", async (req, res) => {
   }
 
   try {
-    const [updated] = await db
-      .update(setlistsTable)
-      .set({ name: parsed.data.name })
-      .where(eq(setlistsTable.id, id))
-      .returning();
+    const updated = await db.setlist.updateMany({
+      where: { id },
+      data: { name: parsed.data.name },
+    });
 
-    if (!updated) {
+    if (updated.count === 0) {
       res.status(404).json({ error: "Setlist not found" });
       return;
     }
 
-    res.json(updated);
+    const setlist = await db.setlist.findUniqueOrThrow({ where: { id } });
+    res.json(setlist);
   } catch (err) {
     req.log.error({ err }, "Failed to update setlist");
     res.status(500).json({ error: "Internal server error" });
@@ -124,7 +122,7 @@ router.delete("/:id", async (req, res) => {
   }
 
   try {
-    await db.delete(setlistsTable).where(eq(setlistsTable.id, id));
+    await db.setlist.deleteMany({ where: { id } });
     res.json({ success: true });
   } catch (err) {
     req.log.error({ err }, "Failed to delete setlist");
@@ -154,23 +152,22 @@ router.post("/:id/songs", async (req, res) => {
   }
 
   try {
-    const [{ maxPos }] = await db
-      .select({ maxPos: sql<number>`coalesce(max(${setlistSongsTable.position}), -1)::int` })
-      .from(setlistSongsTable)
-      .where(eq(setlistSongsTable.setlistId, setlistId));
+    const maxPosition = await db.setlistSong.aggregate({
+      where: { setlistId },
+      _max: { position: true },
+    });
 
-    const [song] = await db
-      .insert(setlistSongsTable)
-      .values({
+    const song = await db.setlistSong.create({
+      data: {
         setlistId,
-        position: maxPos + 1,
+        position: (maxPosition._max.position ?? -1) + 1,
         title: parsed.data.title,
         artist: parsed.data.artist,
         durationMs: parsed.data.durationMs,
         spotifyId: parsed.data.spotifyId ?? null,
         albumArt: parsed.data.albumArt ?? null,
-      })
-      .returning();
+      },
+    });
 
     res.status(201).json(song);
   } catch (err) {
@@ -187,7 +184,7 @@ router.delete("/:id/songs/:songId", async (req, res) => {
   }
 
   try {
-    await db.delete(setlistSongsTable).where(eq(setlistSongsTable.id, songId));
+    await db.setlistSong.deleteMany({ where: { id: songId } });
     res.json({ success: true });
   } catch (err) {
     req.log.error({ err }, "Failed to remove song");
@@ -210,14 +207,14 @@ router.put("/:id/songs/reorder", async (req, res) => {
   }
 
   try {
-    await db.transaction(async (tx) => {
-      for (let i = 0; i < parsed.data.songIds.length; i++) {
-        await tx
-          .update(setlistSongsTable)
-          .set({ position: i })
-          .where(eq(setlistSongsTable.id, parsed.data.songIds[i]));
-      }
-    });
+    await db.$transaction(
+      parsed.data.songIds.map((songId, position) =>
+        db.setlistSong.updateMany({
+          where: { id: songId, setlistId },
+          data: { position },
+        }),
+      ),
+    );
 
     res.json({ success: true });
   } catch (err) {
