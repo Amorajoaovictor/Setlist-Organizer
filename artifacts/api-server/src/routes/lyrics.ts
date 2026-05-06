@@ -22,7 +22,6 @@ const saveLyricsSchema = z.object({
   plainLyrics: z.string().default(""),
   syncedLyrics: z.string().nullable().optional(),
   lines: z.array(lyricLineSchema).optional(),
-  audioUrl: z.string().nullable().optional(),
   bpm: z.number().int().min(30).max(300).nullable().optional(),
 });
 

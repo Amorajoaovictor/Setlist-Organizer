@@ -68,6 +68,7 @@ Esta lista organiza o backlog funcional e tecnico da aplicacao a partir do estad
 - [ ] Parsear LRC em linhas com timestamps.
 - [ ] Criar estrutura editavel de linhas sincronizadas.
 - [ ] Implementar contador de tempo para marcacao manual.
+- [ ] Permitir preview de audio apenas no client, usando arquivo local/URL temporaria sem upload.
 - [ ] Permitir marcar timestamp da linha atual durante reproducao.
 - [ ] Permitir ajustar timestamps manualmente.
 - [ ] Destacar linha ativa conforme tempo atual.
@@ -95,9 +96,10 @@ Esta lista organiza o backlog funcional e tecnico da aplicacao a partir do estad
 ## Persistencia
 
 - [x] Persistir setlists no PostgreSQL.
-- [x] Persistir musicas de setlist no PostgreSQL.
+- [x] Persistir dados das musicas de setlist no PostgreSQL.
 - [ ] Persistir letras.
 - [ ] Persistir sincronizacao de letras.
+- [ ] Garantir que arquivos de audio de preview nao sejam persistidos nem enviados ao backend.
 - [ ] Persistir dados por usuario apos autenticacao.
 - [ ] Avaliar browser storage apenas como fallback temporario/offline.
 

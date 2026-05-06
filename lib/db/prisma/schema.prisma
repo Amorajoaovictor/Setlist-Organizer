@@ -39,7 +39,6 @@ model SetlistSongLyrics {
   plainLyrics  String      @default("") @map("plain_lyrics")
   syncedLyrics String?     @map("synced_lyrics")
   lines        Json        @default("[]")
-  audioUrl     String?     @map("audio_url")
   bpm          Int?
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")

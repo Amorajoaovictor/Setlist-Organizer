@@ -13,6 +13,8 @@ tags:
     description: Setlist management
   - name: spotify
     description: Spotify track search
+  - name: lyrics
+    description: Synced lyrics search and storage
 paths:
   /healthz:
     get:
@@ -178,6 +180,100 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
+
+  /setlists/{id}/songs/{songId}/lyrics:
+    get:
+      operationId: getSongLyrics
+      tags: [lyrics]
+      summary: Get stored lyrics for a setlist song
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Stored lyrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SongLyrics"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: saveSongLyrics
+      tags: [lyrics]
+      summary: Save manual or LRCLIB-derived synced lyrics
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveSongLyricsInput"
+      responses:
+        "200":
+          description: Saved lyrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SongLyrics"
+        "404":
+          description: Song not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /setlists/{id}/songs/{songId}/lyrics/search:
+    post:
+      operationId: searchLrclibLyrics
+      tags: [lyrics]
+      summary: Fetch lyrics and timestamps from LRCLIB for a setlist song
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: LRCLIB lyrics result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LrclibLyricsResult"
+        "404":
+          description: Lyrics not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /setlists/{id}/songs/reorder:
     put:
@@ -391,6 +487,137 @@ components:
         - title
         - artist
         - durationMs
+
+    LyricLine:
+      type: object
+      properties:
+        index:
+          type: integer
+        text:
+          type: string
+        startMs:
+          type:
+            - integer
+            - "null"
+          description: Milliseconds from audio start. Null for unsynced/manual draft lines.
+      required:
+        - index
+        - text
+        - startMs
+
+    SongLyrics:
+      type: object
+      properties:
+        id:
+          type: integer
+        songId:
+          type: integer
+        source:
+          type: string
+          enum: [lrclib, manual]
+        lrclibId:
+          type:
+            - integer
+            - "null"
+        plainLyrics:
+          type: string
+        syncedLyrics:
+          type:
+            - string
+            - "null"
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/LyricLine"
+        bpm:
+          type:
+            - integer
+            - "null"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - songId
+        - source
+        - lrclibId
+        - plainLyrics
+        - syncedLyrics
+        - lines
+        - bpm
+        - createdAt
+        - updatedAt
+
+    SaveSongLyricsInput:
+      type: object
+      properties:
+        source:
+          type: string
+          enum: [lrclib, manual]
+        lrclibId:
+          type:
+            - integer
+            - "null"
+        plainLyrics:
+          type: string
+        syncedLyrics:
+          type:
+            - string
+            - "null"
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/LyricLine"
+        bpm:
+          type:
+            - integer
+            - "null"
+      required:
+        - source
+        - plainLyrics
+
+    LrclibLyricsResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        trackName:
+          type: string
+        artistName:
+          type: string
+        albumName:
+          type:
+            - string
+            - "null"
+        duration:
+          type:
+            - integer
+            - "null"
+        instrumental:
+          type: boolean
+        plainLyrics:
+          type: string
+        syncedLyrics:
+          type:
+            - string
+            - "null"
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/LyricLine"
+      required:
+        - id
+        - trackName
+        - artistName
+        - albumName
+        - duration
+        - instrumental
+        - plainLyrics
+        - syncedLyrics
+        - lines
 
 
 

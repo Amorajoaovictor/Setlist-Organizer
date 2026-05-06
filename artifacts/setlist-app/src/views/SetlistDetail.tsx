@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { 
   ArrowLeft, Clock, GripVertical, Trash2, Edit2, 
-  Check, X, Music, AlertCircle, Loader2
+  Check, X, Music, AlertCircle, Loader2, FileText
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { SpotifySearch } from "@/components/SpotifySearch";
+import { LyricsSyncPanel } from "@/components/LyricsSyncPanel";
 import { formatDuration, cn } from "@/lib/utils";
 
 export default function SetlistDetail() {
@@ -38,6 +39,21 @@ export default function SetlistDetail() {
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
+  const [selectedLyricsSongId, setSelectedLyricsSongId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!setlist?.songs.length) {
+      setSelectedLyricsSongId(null);
+      return;
+    }
+
+    const hasSelectedSong = setlist.songs.some(
+      (song) => song.id === selectedLyricsSongId,
+    );
+    if (!hasSelectedSong) {
+      setSelectedLyricsSongId(setlist.songs[0]?.id ?? null);
+    }
+  }, [selectedLyricsSongId, setlist?.songs]);
 
   if (isLoading) {
     return (
@@ -137,6 +153,11 @@ export default function SetlistDetail() {
       }
     );
   };
+
+  const selectedLyricsSong =
+    setlist.songs.find((song) => song.id === selectedLyricsSongId) ??
+    setlist.songs[0] ??
+    null;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -280,6 +301,16 @@ export default function SetlistDetail() {
                               </div>
 
                               <Button
+                                variant={selectedLyricsSongId === song.id ? "secondary" : "outline"}
+                                size="sm"
+                                className="flex-shrink-0"
+                                onClick={() => setSelectedLyricsSongId(song.id)}
+                              >
+                                <FileText className="w-4 h-4 mr-2" />
+                                Lyrics
+                              </Button>
+
+                              <Button
                                 variant="ghost"
                                 size="icon"
                                 className="bg-destructive/10 text-destructive active:bg-destructive/30 transition-all rounded-full h-10 w-10 ml-2 flex-shrink-0"
@@ -298,6 +329,8 @@ export default function SetlistDetail() {
                 </Droppable>
               </DragDropContext>
             )}
+
+            <LyricsSyncPanel setlistId={setId} song={selectedLyricsSong} />
           </div>
 
           {/* Spotify Search Sidebar */}

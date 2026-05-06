@@ -76,6 +76,8 @@ Schema atual em `lib/db/prisma/schema.prisma`:
 
 Nao ha ainda modelos de usuario, autenticacao, letra, sincronizacao, apresentacao ou metronomo.
 
+Arquivos de audio nao devem ser salvos no backend. O backend pode persistir dados da faixa na setlist, letra, sincronia/timestamps e metadados de origem, mas o arquivo usado para preview durante a criacao da letra sincronizada deve permanecer apenas no client.
+
 ## Contratos API e Dados
 
 O contrato oficial esta em `lib/api-spec/openapi.yaml`. Sempre atualize o OpenAPI quando adicionar ou alterar endpoints, campos ou codigos de resposta que sejam consumidos pelo frontend gerado.
@@ -312,6 +314,7 @@ Quando LRCLIB nao encontrar letra adequada, retornar letra incompleta, retornar 
 - Exibir editor manual de letra.
 - Permitir colar ou digitar a letra inteira.
 - Permitir editar linhas importadas da LRCLIB.
+- Permitir selecionar ou informar audio apenas no client para preview local, sem upload e sem persistencia do arquivo.
 - Permitir criar sincronizacao manual por linha durante uma reproducao com contador.
 - Botao esperado: marcar o tempo da linha atual enquanto o contador roda.
 - Permitir ajustar timestamps manualmente depois da marcacao.
@@ -367,6 +370,7 @@ O MVP deve focar em:
 - Use validacao Zod nos route handlers para entradas novas.
 - Mantenha rotas de API sob `/api` para compatibilidade com o servidor Next.
 - Ao implementar Letras, mantenha fallback manual como requisito de primeira classe, nao como detalhe secundario.
+- Nao crie armazenamento, upload ou endpoint para arquivos de audio; preview de audio para sincronizacao manual e responsabilidade exclusiva do client.
 - Evite acoplar letras exclusivamente ao Spotify ID, porque musicas podem ser inseridas manualmente ou vir de outras fontes.
 - Antes de mexer em UI, verifique os componentes e estilos existentes para manter consistencia visual.
 - Nao remova nem reverta mudancas de outros agentes sem instrucao explicita.

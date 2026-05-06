@@ -1,4 +1,4 @@
-import { db } from "./index";
+import { db } from "./client";
 
 export type LyricSource = "lrclib" | "manual";
 
@@ -16,7 +16,6 @@ export type StoredSongLyrics = {
   plainLyrics: string;
   syncedLyrics: string | null;
   lines: LyricLine[];
-  audioUrl: string | null;
   bpm: number | null;
   createdAt: string;
   updatedAt: string;
@@ -30,7 +29,6 @@ export type SaveSongLyricsInput = {
   plainLyrics: string;
   syncedLyrics?: string | null;
   lines?: LyricLine[];
-  audioUrl?: string | null;
   bpm?: number | null;
 };
 
@@ -54,7 +52,6 @@ type LyricsRow = {
   plainLyrics: string | null;
   syncedLyrics: string | null;
   lines: unknown;
-  audioUrl: string | null;
   bpm: number | null;
   createdAt: Date;
   updatedAt: Date;
@@ -149,11 +146,21 @@ export async function ensureSongLyricsTable() {
       plain_lyrics TEXT NOT NULL DEFAULT '',
       synced_lyrics TEXT,
       lines JSONB NOT NULL DEFAULT '[]'::jsonb,
-      audio_url TEXT,
       bpm INTEGER,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
+  `);
+  await db.$executeRawUnsafe(`
+    ALTER TABLE setlist_song_lyrics
+      ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'manual',
+      ADD COLUMN IF NOT EXISTS lrclib_id INTEGER,
+      ADD COLUMN IF NOT EXISTS plain_lyrics TEXT NOT NULL DEFAULT '',
+      ADD COLUMN IF NOT EXISTS synced_lyrics TEXT,
+      ADD COLUMN IF NOT EXISTS lines JSONB NOT NULL DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
   `);
 }
 
@@ -183,7 +190,6 @@ export async function getSongLyrics(setlistId: number, songId: number) {
         plain_lyrics AS "plainLyrics",
         synced_lyrics AS "syncedLyrics",
         lines,
-        audio_url AS "audioUrl",
         bpm,
         created_at AS "createdAt",
         updated_at AS "updatedAt"
@@ -226,18 +232,16 @@ export async function saveSongLyrics(input: SaveSongLyricsInput) {
         plain_lyrics,
         synced_lyrics,
         lines,
-        audio_url,
         bpm,
         updated_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, now())
+      VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, now())
       ON CONFLICT (song_id) DO UPDATE SET
         source = EXCLUDED.source,
         lrclib_id = EXCLUDED.lrclib_id,
         plain_lyrics = EXCLUDED.plain_lyrics,
         synced_lyrics = EXCLUDED.synced_lyrics,
         lines = EXCLUDED.lines,
-        audio_url = EXCLUDED.audio_url,
         bpm = EXCLUDED.bpm,
         updated_at = now()
       RETURNING
@@ -248,7 +252,6 @@ export async function saveSongLyrics(input: SaveSongLyricsInput) {
         plain_lyrics AS "plainLyrics",
         synced_lyrics AS "syncedLyrics",
         lines,
-        audio_url AS "audioUrl",
         bpm,
         created_at AS "createdAt",
         updated_at AS "updatedAt"
@@ -259,7 +262,6 @@ export async function saveSongLyrics(input: SaveSongLyricsInput) {
     input.plainLyrics,
     syncedLyrics,
     JSON.stringify(normalizedLines),
-    input.audioUrl ?? null,
     input.bpm ?? null,
   );
 
@@ -351,7 +353,6 @@ function mapLyricsRow(row: LyricsRow): StoredSongLyrics {
     plainLyrics: row.plainLyrics ?? "",
     syncedLyrics: row.syncedLyrics,
     lines,
-    audioUrl: row.audioUrl,
     bpm: row.bpm,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
