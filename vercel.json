@@ -1,4 +1,1 @@
-{
-  "installCommand": "pnpm install",
-  "buildCommand": "pnpm --filter @workspace/setlist-app run build"
-}
+
