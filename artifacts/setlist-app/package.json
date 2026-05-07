@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
-    "build": "next build",
+    "build": "pnpm --filter @workspace/db generate && next build",
     "serve": "next start -H 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
