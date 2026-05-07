@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { SpotifySearch } from "@/components/SpotifySearch";
-import { LyricsSyncPanel } from "@/components/LyricsSyncPanel";
+import { SetlistPresentationMode } from "@/components/SetlistPresentationMode";
 import { formatDuration, cn } from "@/lib/utils";
 
 export default function SetlistDetail() {
@@ -39,21 +39,6 @@ export default function SetlistDetail() {
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
-  const [selectedLyricsSongId, setSelectedLyricsSongId] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!setlist?.songs.length) {
-      setSelectedLyricsSongId(null);
-      return;
-    }
-
-    const hasSelectedSong = setlist.songs.some(
-      (song) => song.id === selectedLyricsSongId,
-    );
-    if (!hasSelectedSong) {
-      setSelectedLyricsSongId(setlist.songs[0]?.id ?? null);
-    }
-  }, [selectedLyricsSongId, setlist?.songs]);
 
   if (isLoading) {
     return (
@@ -154,11 +139,6 @@ export default function SetlistDetail() {
     );
   };
 
-  const selectedLyricsSong =
-    setlist.songs.find((song) => song.id === selectedLyricsSongId) ??
-    setlist.songs[0] ??
-    null;
-
   return (
     <div className="min-h-screen flex flex-col">
       {/* Background Hero */}
@@ -217,15 +197,22 @@ export default function SetlistDetail() {
             )}
           </div>
 
-          <div className="flex items-center gap-4 bg-black/40 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/5">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Clock className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Total Runtime</p>
-              <p className="text-3xl font-display font-bold text-foreground">
-                {formatDuration(setlist.songs.reduce((acc, s) => acc + s.durationMs, 0))}
-              </p>
+          <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+            <SetlistPresentationMode
+              setlistId={setId}
+              setlistName={setlist.name}
+              songs={setlist.songs}
+            />
+            <div className="flex items-center gap-4 bg-black/40 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/5">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Clock className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Total Runtime</p>
+                <p className="text-3xl font-display font-bold text-foreground">
+                  {formatDuration(setlist.songs.reduce((acc, s) => acc + s.durationMs, 0))}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -301,13 +288,15 @@ export default function SetlistDetail() {
                               </div>
 
                               <Button
-                                variant={selectedLyricsSongId === song.id ? "secondary" : "outline"}
+                                asChild
+                                variant="outline"
                                 size="sm"
                                 className="flex-shrink-0"
-                                onClick={() => setSelectedLyricsSongId(song.id)}
                               >
-                                <FileText className="w-4 h-4 mr-2" />
-                                Lyrics
+                                <Link href={`/setlists/${setId}/songs/${song.id}/lyrics`}>
+                                  <FileText className="w-4 h-4 mr-2" />
+                                  Lyrics
+                                </Link>
                               </Button>
 
                               <Button
@@ -329,8 +318,6 @@ export default function SetlistDetail() {
                 </Droppable>
               </DragDropContext>
             )}
-
-            <LyricsSyncPanel setlistId={setId} song={selectedLyricsSong} />
           </div>
 
           {/* Spotify Search Sidebar */}

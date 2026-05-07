@@ -2,14 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Activity,
   ChevronLeft,
   ChevronRight,
   FileText,
+  Gauge,
+  ListMusic,
   Loader2,
+  Mic2,
   Pause,
   Play,
   Save,
   Search,
+  SlidersHorizontal,
   Timer,
   Upload,
 } from "lucide-react";
@@ -81,7 +86,6 @@ export function LyricsSyncPanel({
   const [isSaving, setIsSaving] = useState(false);
   const [metronomeOn, setMetronomeOn] = useState(false);
   const [countIn, setCountIn] = useState<number | null>(null);
-  const [presentationOpen, setPresentationOpen] = useState(false);
   const [localAudioUrl, setLocalAudioUrl] = useState("");
 
   const storageKey = song
@@ -91,12 +95,16 @@ export function LyricsSyncPanel({
   const currentLine = draft.lines[selectedLine] ?? null;
   const syncedCount = draft.lines.filter((line) => line.startMs != null).length;
   const previewAudioSrc = localAudioUrl || draft.audioUrl;
+  const syncProgress =
+    draft.lines.length > 0 ? Math.round((syncedCount / draft.lines.length) * 100) : 0;
+  const songDurationMs = song?.durationMs ?? 0;
+  const playbackProgress =
+    songDurationMs > 0 ? Math.min(100, (elapsedMs / songDurationMs) * 100) : 0;
 
   const syncedLyricsText = useMemo(() => formatSyncedLyrics(draft.lines), [draft.lines]);
 
   useEffect(() => {
     stopMetronome();
-    setPresentationOpen(false);
     setSelectedLine(0);
     setElapsedMs(0);
     setLocalAudioUrl("");
@@ -262,6 +270,18 @@ export function LyricsSyncPanel({
     setSelectedLine((current) => Math.min(current + 1, draft.lines.length - 1));
   }
 
+  function updateLineTimestamp(index: number, value: string) {
+    const seconds = Number.parseFloat(value);
+    const timestampMs = Number.isFinite(seconds) ? Math.max(0, Math.round(seconds * 1_000)) : null;
+
+    setDraft((current) => ({
+      ...current,
+      lines: current.lines.map((line, lineIndex) =>
+        lineIndex === index ? { ...line, startMs: timestampMs } : line,
+      ),
+    }));
+  }
+
   function moveLine(direction: -1 | 1) {
     setSelectedLine((current) =>
       Math.min(Math.max(current + direction, 0), Math.max(draft.lines.length - 1, 0)),
@@ -378,221 +398,289 @@ export function LyricsSyncPanel({
       <section className="glass-panel rounded-2xl p-6">
         <div className="flex items-center gap-3 text-muted-foreground">
           <FileText className="h-5 w-5" />
-          Add a track to configure synced lyrics.
+          Selecione uma faixa para abrir o editor de sincronizacao.
         </div>
       </section>
     );
   }
 
   return (
-    <section className="glass-panel rounded-2xl p-5 sm:p-6">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-xl font-display font-bold">Synced lyrics</h2>
-          <p className="text-sm text-muted-foreground">
-            {song.title} - {song.artist}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={searchLrclib} disabled={isSearching}>
-            {isSearching ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Search className="mr-2 h-4 w-4" />
-            )}
-            LRCLIB
-          </Button>
-          <Button size="sm" variant="glow" onClick={saveLyrics} disabled={isSaving}>
-            {isSaving ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            Save
-          </Button>
-        </div>
+    <section className="relative overflow-hidden rounded-2xl border border-cyan-400/15 bg-[#050712]/95 p-4 shadow-2xl shadow-cyan-950/40 sm:p-6">
+      <div className="pointer-events-none absolute inset-0 opacity-70">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent" />
+        <div className="absolute left-[-20%] top-[-35%] h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
+        <div className="absolute bottom-[-30%] right-[-15%] h-80 w-80 rounded-full bg-fuchsia-500/10 blur-3xl" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(34,211,238,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.035)_1px,transparent_1px)] bg-[size:48px_48px]" />
       </div>
 
-      {isLoading ? (
-        <div className="flex h-48 items-center justify-center text-muted-foreground">
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          Loading lyrics
-        </div>
-      ) : (
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-          <div className="space-y-4">
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-muted-foreground">
-                Plain lyrics
-              </span>
-              <textarea
-                value={draft.plainLyrics}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    source: "manual",
-                    plainLyrics: event.target.value,
-                  }))
-                }
-                className="min-h-44 w-full rounded-xl border border-white/10 bg-black/30 p-3 text-sm outline-none ring-primary/40 transition focus:ring-2"
-                placeholder="Paste lyrics here, one line per phrase."
-              />
-            </label>
-            <Button variant="outline" onClick={applyPlainLyrics} className="w-full">
-              Split into controllable lines
-            </Button>
+      <div className="relative">
+        <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+              <Mic2 className="h-3.5 w-3.5" />
+              Editor de Sincronizacao de Karaoke
+            </div>
+            <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">
+              Neon Lyric Sync
+            </h2>
+            <p className="truncate text-sm text-slate-400">
+              {song.title} - {song.artist}
+            </p>
+          </div>
 
-            <div className="space-y-3 rounded-xl border border-white/10 bg-black/20 p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <Timer className="h-4 w-4 text-primary" />
-                Preview audio and metronome
-              </div>
-              <label className="block">
-                <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  <Upload className="h-3.5 w-3.5" />
-                  Local audio file
-                </span>
-                <Input
-                  type="file"
-                  accept="audio/*"
-                  onChange={(event) => selectLocalAudio(event.target.files?.[0])}
-                />
-              </label>
-              <Input
-                value={draft.audioUrl}
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, audioUrl: event.target.value }))
-                }
-                placeholder="Temporary audio URL for client-side preview"
-              />
-              {previewAudioSrc ? (
-                <audio
-                  ref={audioRef}
-                  src={previewAudioSrc}
-                  controls
-                  className="w-full"
-                />
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={searchLrclib} disabled={isSearching}>
+              {isSearching ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <audio ref={audioRef} className="hidden" />
+                <Search className="mr-2 h-4 w-4" />
               )}
-              <div className="grid grid-cols-[1fr_auto] gap-3">
-                <Input
-                  type="number"
-                  min={30}
-                  max={300}
-                  value={draft.bpm}
+              Buscar LRCLIB
+            </Button>
+            <Button size="sm" variant="glow" onClick={saveLyrics} disabled={isSaving}>
+              {isSaving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Salvar
+            </Button>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex h-64 items-center justify-center rounded-xl border border-white/10 bg-black/30 text-slate-400">
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            Carregando letras
+          </div>
+        ) : (
+          <div className="grid gap-5 xl:grid-cols-[minmax(18rem,0.9fr)_minmax(0,1.35fr)]">
+            <div className="space-y-4">
+              <div className="rounded-xl border border-white/10 bg-black/35 p-4">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                    <FileText className="h-4 w-4 text-cyan-300" />
+                    Letra base
+                  </div>
+                  <span className="rounded-full bg-white/5 px-2.5 py-1 text-xs text-slate-400">
+                    {draft.source === "lrclib" ? "LRCLIB" : "Manual"}
+                  </span>
+                </div>
+                <textarea
+                  value={draft.plainLyrics}
                   onChange={(event) =>
                     setDraft((current) => ({
                       ...current,
-                      bpm: Number.parseInt(event.target.value, 10) || 120,
+                      source: "manual",
+                      plainLyrics: event.target.value,
                     }))
                   }
+                  className="min-h-56 w-full resize-y rounded-xl border border-cyan-300/10 bg-slate-950/80 p-3 text-sm leading-6 text-slate-100 outline-none ring-cyan-300/30 transition placeholder:text-slate-600 focus:border-cyan-300/40 focus:ring-2"
+                  placeholder="Cole a letra aqui, uma frase por linha."
                 />
-                <Button variant={metronomeOn ? "secondary" : "outline"} onClick={startMetronome}>
-                  {metronomeOn ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-                  {metronomeOn ? "Stop" : "Click"}
+                <Button variant="outline" onClick={applyPlainLyrics} className="mt-3 w-full">
+                  <ListMusic className="mr-2 h-4 w-4" />
+                  Separar linhas para sincronizar
                 </Button>
               </div>
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>Counter {formatMs(elapsedMs)}</span>
-                <span>{countIn ? `Count-in ${countIn}` : `${syncedCount}/${draft.lines.length} synced`}</span>
-              </div>
-            </div>
-          </div>
 
-          <div className="space-y-4">
-            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                    Current line
-                  </p>
-                  <p className="font-semibold">{currentLine?.text ?? "No line selected"}</p>
+              <div className="space-y-3 rounded-xl border border-white/10 bg-black/35 p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                  <SlidersHorizontal className="h-4 w-4 text-fuchsia-300" />
+                  Audio e metronomo
                 </div>
-                <div className="font-mono text-lg text-primary">
-                  {currentLine?.startMs == null ? "--:--.--" : formatMs(currentLine.startMs)}
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <Button variant="outline" onClick={() => moveLine(-1)}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button variant="glow" onClick={markCurrentTimestamp} disabled={draft.lines.length === 0}>
-                  Mark
-                </Button>
-                <Button variant="outline" onClick={() => moveLine(1)}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-              <Button
-                variant="secondary"
-                className="mt-3 w-full"
-                onClick={() => setPresentationOpen(true)}
-                disabled={draft.lines.length === 0}
-              >
-                Presentation preview
-              </Button>
-            </div>
-
-            <div className="max-h-[28rem] space-y-2 overflow-y-auto pr-1">
-              {draft.lines.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-white/10 p-8 text-center text-sm text-muted-foreground">
-                  Search LRCLIB or split pasted lyrics to create sync lines.
-                </div>
-              ) : (
-                draft.lines.map((line, index) => (
-                  <button
-                    key={`${line.index}-${index}`}
-                    type="button"
-                    onClick={() => setSelectedLine(index)}
-                    className={cn(
-                      "grid w-full grid-cols-[4.5rem_1fr] gap-3 rounded-xl border p-3 text-left text-sm transition",
-                      selectedLine === index
-                        ? "border-primary/70 bg-primary/10 text-foreground"
-                        : "border-white/10 bg-white/[0.03] text-muted-foreground hover:border-white/20",
-                    )}
+                <label className="block">
+                  <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <Upload className="h-3.5 w-3.5" />
+                    Arquivo local para preview
+                  </span>
+                  <Input
+                    type="file"
+                    accept="audio/*"
+                    onChange={(event) => selectLocalAudio(event.target.files?.[0])}
+                    className="border-cyan-300/10 bg-slate-950/70"
+                  />
+                </label>
+                <Input
+                  value={draft.audioUrl}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, audioUrl: event.target.value }))
+                  }
+                  className="border-cyan-300/10 bg-slate-950/70"
+                  placeholder="URL temporaria de audio para preview"
+                />
+                {previewAudioSrc ? (
+                  <audio ref={audioRef} src={previewAudioSrc} controls className="w-full" />
+                ) : (
+                  <audio ref={audioRef} className="hidden" />
+                )}
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
+                  <label className="relative">
+                    <Gauge className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    <Input
+                      type="number"
+                      min={30}
+                      max={300}
+                      value={draft.bpm}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          bpm: Number.parseInt(event.target.value, 10) || 120,
+                        }))
+                      }
+                      className="border-cyan-300/10 bg-slate-950/70 pl-10"
+                    />
+                  </label>
+                  <Button
+                    variant={metronomeOn ? "secondary" : "outline"}
+                    onClick={startMetronome}
+                    className={cn(metronomeOn ? "border-fuchsia-300/40 text-fuchsia-100" : "")}
                   >
-                    <span className="font-mono text-xs">
-                      {line.startMs == null ? "--:--.--" : formatMs(line.startMs)}
-                    </span>
-                    <span>{line.text}</span>
-                  </button>
-                ))
-              )}
+                    {metronomeOn ? (
+                      <Pause className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Play className="mr-2 h-4 w-4" />
+                    )}
+                    {metronomeOn ? "Parar" : "Click"}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                    <p className="text-xs uppercase tracking-wider text-slate-500">Tempo</p>
+                    <p className="font-mono text-lg text-cyan-200">{formatMs(elapsedMs)}</p>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                    <p className="text-xs uppercase tracking-wider text-slate-500">
+                      {countIn ? "Entrada" : "Sincronizado"}
+                    </p>
+                    <p className="font-mono text-lg text-fuchsia-200">
+                      {countIn ? countIn : `${syncedCount}/${draft.lines.length}`}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
 
-      {presentationOpen ? (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-white/50">{song.title}</p>
-              <p className="text-lg font-semibold">{formatMs(elapsedMs)}</p>
+            <div className="space-y-4">
+              <div className="rounded-xl border border-cyan-300/20 bg-gradient-to-br from-cyan-300/10 via-white/[0.04] to-fuchsia-400/10 p-4 shadow-xl shadow-cyan-950/30">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+                      <Activity className="h-3.5 w-3.5" />
+                      Linha atual
+                    </p>
+                    <p className="mt-2 text-xl font-bold leading-snug text-white sm:text-2xl">
+                      {currentLine?.text ?? "Nenhuma linha selecionada"}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-cyan-300/20 bg-black/40 px-4 py-3 text-right">
+                    <p className="text-xs uppercase tracking-wider text-slate-500">Marcacao</p>
+                    <p className="font-mono text-2xl text-cyan-200">
+                      {currentLine?.startMs == null ? "--:--.--" : formatMs(currentLine.startMs)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mb-4 h-2 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-fuchsia-400"
+                    style={{ width: `${playbackProgress}%` }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-2">
+                  <Button variant="outline" onClick={() => moveLine(-1)} aria-label="Linha anterior">
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="glow"
+                    onClick={markCurrentTimestamp}
+                    disabled={draft.lines.length === 0}
+                    className="min-w-0"
+                  >
+                    Marcar tempo da linha
+                  </Button>
+                  <Button variant="outline" onClick={() => moveLine(1)} aria-label="Proxima linha">
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="mt-3">
+                  <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
+                    <span>Progresso da sincronizacao</span>
+                    <span>{syncProgress}%</span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-cyan-300"
+                      style={{ width: `${syncProgress}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-black/35 p-3">
+                <div className="mb-3 flex items-center justify-between gap-3 px-1">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                    <ListMusic className="h-4 w-4 text-cyan-300" />
+                    Timeline da letra
+                  </div>
+                  <span className="text-xs text-slate-500">{draft.lines.length} linhas</span>
+                </div>
+                <div className="max-h-[31rem] space-y-2 overflow-y-auto pr-1">
+                  {draft.lines.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-cyan-300/20 p-8 text-center text-sm text-slate-500">
+                      Busque no LRCLIB ou separe a letra colada para criar as linhas de sync.
+                    </div>
+                  ) : (
+                    draft.lines.map((line, index) => (
+                      <div
+                        key={`${line.index}-${index}`}
+                        className={cn(
+                          "grid gap-3 rounded-xl border p-3 text-sm transition sm:grid-cols-[3rem_minmax(0,1fr)_6.5rem]",
+                          selectedLine === index
+                            ? "border-cyan-300/60 bg-cyan-300/10 text-white shadow-lg shadow-cyan-950/30"
+                            : "border-white/10 bg-white/[0.03] text-slate-400 hover:border-white/20",
+                        )}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setSelectedLine(index)}
+                          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-black/30 font-mono text-xs text-slate-300"
+                          aria-label={`Selecionar linha ${index + 1}`}
+                        >
+                          {(index + 1).toString().padStart(2, "0")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedLine(index)}
+                          className="min-w-0 text-left leading-5"
+                        >
+                          <span className="line-clamp-2">{line.text}</span>
+                        </button>
+                        <label className="flex items-center gap-2">
+                          <Timer className="h-3.5 w-3.5 flex-shrink-0 text-slate-500" />
+                          <Input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            value={line.startMs == null ? "" : (line.startMs / 1_000).toFixed(2)}
+                            onChange={(event) => updateLineTimestamp(index, event.target.value)}
+                            onFocus={() => setSelectedLine(index)}
+                            className="h-9 rounded-lg border-cyan-300/10 bg-slate-950/70 px-2 font-mono text-xs"
+                            placeholder="--"
+                            aria-label={`Tempo em segundos da linha ${index + 1}`}
+                          />
+                        </label>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
-            <Button variant="outline" onClick={() => setPresentationOpen(false)}>
-              Close
-            </Button>
           </div>
-          <div className="flex flex-1 items-center justify-center text-center">
-            <p className="max-w-5xl text-4xl font-bold leading-tight sm:text-6xl">
-              {currentLine?.text ?? ""}
-            </p>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <Button variant="outline" onClick={() => moveLine(-1)}>
-              Previous
-            </Button>
-            <Button variant="glow" onClick={markCurrentTimestamp}>
-              Mark timestamp
-            </Button>
-            <Button variant="outline" onClick={() => moveLine(1)}>
-              Next
-            </Button>
-          </div>
-        </div>
-      ) : null}
+        )}
+      </div>
     </section>
   );
 }
