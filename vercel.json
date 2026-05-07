@@ -1,7 +1,3 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm --filter @workspace/setlist-app build",
-  "outputDirectory": "artifacts/setlist-app/.next"
+  "$schema": "https://openapi.vercel.sh/vercel.json"
 }
