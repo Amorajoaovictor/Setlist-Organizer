@@ -67,6 +67,8 @@ const emptyDraft: Draft = {
   bpm: 120,
 };
 
+const WAVEFORM_BAR_COUNT = 96;
+
 export function LyricsSyncPanel({
   setlistId,
   song,
@@ -87,6 +89,13 @@ export function LyricsSyncPanel({
   const [metronomeOn, setMetronomeOn] = useState(false);
   const [countIn, setCountIn] = useState<number | null>(null);
   const [localAudioUrl, setLocalAudioUrl] = useState("");
+  const [audioDurationMs, setAudioDurationMs] = useState(0);
+  const [waveformBars, setWaveformBars] = useState<number[]>(() =>
+    createFallbackWaveform(WAVEFORM_BAR_COUNT, 1),
+  );
+  const [waveformStatus, setWaveformStatus] = useState<"idle" | "loading" | "ready" | "fallback">(
+    "idle",
+  );
 
   const storageKey = song
     ? `setlist:${setlistId}:song:${song.id}:lyrics-draft`
@@ -98,8 +107,9 @@ export function LyricsSyncPanel({
   const syncProgress =
     draft.lines.length > 0 ? Math.round((syncedCount / draft.lines.length) * 100) : 0;
   const songDurationMs = song?.durationMs ?? 0;
+  const seekableDurationMs = audioDurationMs || songDurationMs;
   const playbackProgress =
-    songDurationMs > 0 ? Math.min(100, (elapsedMs / songDurationMs) * 100) : 0;
+    seekableDurationMs > 0 ? Math.min(100, (elapsedMs / seekableDurationMs) * 100) : 0;
 
   const syncedLyricsText = useMemo(() => formatSyncedLyrics(draft.lines), [draft.lines]);
 
@@ -209,6 +219,65 @@ export function LyricsSyncPanel({
     };
   }, [localAudioUrl]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const seed = song ? song.id + song.title.length + song.artist.length : 1;
+
+    setWaveformBars(createFallbackWaveform(WAVEFORM_BAR_COUNT, seed));
+    setAudioDurationMs(0);
+
+    if (!previewAudioSrc) {
+      setWaveformStatus("idle");
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setWaveformStatus("loading");
+
+    async function loadWaveform() {
+      let context: AudioContext | null = null;
+
+      try {
+        const response = await fetch(previewAudioSrc);
+        if (!response.ok) {
+          throw new Error("Audio source could not be read");
+        }
+
+        const audioData = await response.arrayBuffer();
+        const AudioContextClass = getAudioContextClass();
+        if (!AudioContextClass) {
+          throw new Error("AudioContext is not available");
+        }
+
+        context = new AudioContextClass();
+        const audioBuffer = await context.decodeAudioData(audioData.slice(0));
+
+        if (cancelled) {
+          return;
+        }
+
+        setWaveformBars(buildWaveformBars(audioBuffer, WAVEFORM_BAR_COUNT));
+        setAudioDurationMs(Math.round(audioBuffer.duration * 1_000));
+        setWaveformStatus("ready");
+      } catch {
+        if (!cancelled) {
+          setWaveformStatus("fallback");
+        }
+      } finally {
+        if (context) {
+          void context.close();
+        }
+      }
+    }
+
+    void loadWaveform();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [previewAudioSrc, song]);
+
   function applyPlainLyrics() {
     const lines = normalizePlainLyrics(draft.plainLyrics).map((text, index) => ({
       index,
@@ -286,6 +355,34 @@ export function LyricsSyncPanel({
     setSelectedLine((current) =>
       Math.min(Math.max(current + direction, 0), Math.max(draft.lines.length - 1, 0)),
     );
+  }
+
+  function seekAudio(nextElapsedMs: number) {
+    const durationMs = seekableDurationMs;
+    const safeElapsedMs =
+      durationMs > 0 ? Math.min(Math.max(nextElapsedMs, 0), durationMs) : Math.max(nextElapsedMs, 0);
+    const audio = audioRef.current;
+
+    if (audio && previewAudioSrc) {
+      audio.currentTime = safeElapsedMs / 1_000;
+    }
+
+    setElapsedMs(Math.round(safeElapsedMs));
+
+    const activeIndex = findActiveLineIndex(draft.lines, safeElapsedMs);
+    if (activeIndex >= 0) {
+      setSelectedLine(activeIndex);
+    }
+  }
+
+  function updateAudioDuration() {
+    const audio = audioRef.current;
+    if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) {
+      setAudioDurationMs(songDurationMs);
+      return;
+    }
+
+    setAudioDurationMs(Math.round(audio.duration * 1_000));
   }
 
   function selectLocalAudio(file: File | undefined) {
@@ -510,7 +607,17 @@ export function LyricsSyncPanel({
                   placeholder="URL temporaria de audio para preview"
                 />
                 {previewAudioSrc ? (
-                  <audio ref={audioRef} src={previewAudioSrc} controls className="w-full" />
+                  <audio
+                    ref={audioRef}
+                    src={previewAudioSrc}
+                    controls
+                    className="w-full"
+                    onDurationChange={updateAudioDuration}
+                    onLoadedMetadata={updateAudioDuration}
+                    onTimeUpdate={(event) =>
+                      setElapsedMs(Math.round(event.currentTarget.currentTime * 1_000))
+                    }
+                  />
                 ) : (
                   <audio ref={audioRef} className="hidden" />
                 )}
@@ -618,6 +725,15 @@ export function LyricsSyncPanel({
                   </div>
                 </div>
               </div>
+
+              <AudioWaveformSeek
+                bars={waveformBars}
+                disabled={!previewAudioSrc || seekableDurationMs <= 0}
+                durationMs={seekableDurationMs}
+                elapsedMs={elapsedMs}
+                status={waveformStatus}
+                onSeek={seekAudio}
+              />
 
               <div className="rounded-xl border border-white/10 bg-black/35 p-3">
                 <div className="mb-3 flex items-center justify-between gap-3 px-1">
@@ -738,4 +854,178 @@ function formatSyncedLyrics(lines: LyricLine[]) {
         : `[${formatMs(line.startMs)}] ${line.text.trim()}`,
     )
     .join("\n");
+}
+
+function AudioWaveformSeek({
+  bars,
+  disabled,
+  durationMs,
+  elapsedMs,
+  status,
+  onSeek,
+}: {
+  bars: number[];
+  disabled: boolean;
+  durationMs: number;
+  elapsedMs: number;
+  status: "idle" | "loading" | "ready" | "fallback";
+  onSeek: (elapsedMs: number) => void;
+}) {
+  const waveformRef = useRef<HTMLDivElement | null>(null);
+  const progressRatio = durationMs > 0 ? Math.min(Math.max(elapsedMs / durationMs, 0), 1) : 0;
+  const activeBars = Math.round(progressRatio * bars.length);
+  const statusLabel =
+    status === "loading"
+      ? "Carregando"
+      : status === "fallback"
+        ? "Preview"
+        : status === "ready"
+          ? "Forma de onda"
+          : "Audio";
+
+  function seekFromPointer(clientX: number) {
+    if (disabled || durationMs <= 0) {
+      return;
+    }
+
+    const bounds = waveformRef.current?.getBoundingClientRect();
+    if (!bounds || bounds.width <= 0) {
+      return;
+    }
+
+    const ratio = Math.min(Math.max((clientX - bounds.left) / bounds.width, 0), 1);
+    onSeek(ratio * durationMs);
+  }
+
+  return (
+    <div className="rounded-xl border border-cyan-300/10 bg-slate-950/70 p-3">
+      <div className="mb-2 flex items-center justify-between gap-3 text-xs text-slate-500">
+        <span className="font-semibold uppercase tracking-wider">{statusLabel}</span>
+        <span className="font-mono text-slate-400">
+          {formatMs(elapsedMs)} / {formatMs(durationMs)}
+        </span>
+      </div>
+      <div
+        ref={waveformRef}
+        role="slider"
+        aria-label="Avancar ou retroceder audio"
+        aria-valuemin={0}
+        aria-valuemax={Math.max(durationMs, 0)}
+        aria-valuenow={Math.min(Math.max(elapsedMs, 0), Math.max(durationMs, 0))}
+        aria-disabled={disabled}
+        tabIndex={disabled ? -1 : 0}
+        onPointerDown={(event) => {
+          event.currentTarget.setPointerCapture(event.pointerId);
+          seekFromPointer(event.clientX);
+        }}
+        onPointerMove={(event) => {
+          if (event.buttons !== 1) {
+            return;
+          }
+
+          seekFromPointer(event.clientX);
+        }}
+        onKeyDown={(event) => {
+          if (disabled) {
+            return;
+          }
+
+          const smallStepMs = 5_000;
+          const largeStepMs = 15_000;
+
+          if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            onSeek(elapsedMs - smallStepMs);
+          } else if (event.key === "ArrowRight") {
+            event.preventDefault();
+            onSeek(elapsedMs + smallStepMs);
+          } else if (event.key === "PageDown") {
+            event.preventDefault();
+            onSeek(elapsedMs - largeStepMs);
+          } else if (event.key === "PageUp") {
+            event.preventDefault();
+            onSeek(elapsedMs + largeStepMs);
+          } else if (event.key === "Home") {
+            event.preventDefault();
+            onSeek(0);
+          } else if (event.key === "End") {
+            event.preventDefault();
+            onSeek(durationMs);
+          }
+        }}
+        className={cn(
+          "relative flex h-20 touch-none items-center gap-1 overflow-hidden rounded-lg border border-white/10 bg-black/35 px-2 outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300/40",
+          disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-cyan-300/30",
+        )}
+      >
+        <div
+          className="pointer-events-none absolute inset-y-2 w-px bg-white shadow-[0_0_18px_rgba(255,255,255,0.8)]"
+          style={{ left: `${progressRatio * 100}%` }}
+        />
+        {bars.map((bar, index) => {
+          const isActive = index < activeBars;
+
+          return (
+            <span
+              key={`${index}-${bar.toFixed(3)}`}
+              className={cn(
+                "min-w-0 flex-1 rounded-full transition-colors",
+                isActive
+                  ? "bg-gradient-to-t from-cyan-300 to-fuchsia-300"
+                  : "bg-slate-700/80",
+              )}
+              style={{ height: `${Math.max(12, Math.round(bar * 100))}%` }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function buildWaveformBars(audioBuffer: AudioBuffer, barCount: number) {
+  const channelCount = Math.min(audioBuffer.numberOfChannels, 2);
+  const samplesPerBar = Math.max(1, Math.floor(audioBuffer.length / barCount));
+  const bars: number[] = [];
+
+  for (let barIndex = 0; barIndex < barCount; barIndex += 1) {
+    const start = barIndex * samplesPerBar;
+    const end = Math.min(start + samplesPerBar, audioBuffer.length);
+    const step = Math.max(1, Math.floor((end - start) / 250));
+    let sum = 0;
+    let samples = 0;
+
+    for (let channel = 0; channel < channelCount; channel += 1) {
+      const channelData = audioBuffer.getChannelData(channel);
+
+      for (let sampleIndex = start; sampleIndex < end; sampleIndex += step) {
+        const sample = channelData[sampleIndex] ?? 0;
+        sum += sample * sample;
+        samples += 1;
+      }
+    }
+
+    bars.push(samples > 0 ? Math.sqrt(sum / samples) : 0);
+  }
+
+  const peak = Math.max(...bars, 0.001);
+  return bars.map((bar) => Math.min(1, Math.max(0.08, Math.sqrt(bar / peak))));
+}
+
+function createFallbackWaveform(barCount: number, seed: number) {
+  return Array.from({ length: barCount }, (_, index) => {
+    const base = Math.sin((index + seed) * 0.47) * 0.22;
+    const detail = Math.sin((index + seed) * 1.71) * 0.14;
+    const swell = Math.sin((index / Math.max(barCount - 1, 1)) * Math.PI) * 0.3;
+
+    return Math.min(1, Math.max(0.12, 0.42 + base + detail + swell));
+  });
+}
+
+function getAudioContextClass() {
+  return (
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext ??
+    null
+  );
 }
