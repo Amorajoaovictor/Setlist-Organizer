@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
-import { Plus, ListMusic, Calendar, Clock, Trash2, ChevronRight, Music } from "lucide-react";
-import { useListSetlists, useCreateSetlist, useDeleteSetlist, getListSetlistsQueryKey } from "@workspace/api-client-react";
+import { Plus, ListMusic, Calendar, Clock, ChevronRight, Music } from "lucide-react";
+import { useListSetlists, useCreateSetlist, getListSetlistsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Button } from "@/components/Button";
@@ -13,11 +13,9 @@ export default function Setlists() {
   const queryClient = useQueryClient();
   const { data: setlists, isLoading } = useListSetlists();
   const createMutation = useCreateSetlist();
-  const deleteMutation = useDeleteSetlist();
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newSetName, setNewSetName] = useState("");
-  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,18 +27,6 @@ export default function Setlists() {
         onSuccess: () => {
           setIsCreateModalOpen(false);
           setNewSetName("");
-          queryClient.invalidateQueries({ queryKey: getListSetlistsQueryKey() });
-        }
-      }
-    );
-  };
-
-  const handleDelete = (id: number) => {
-    deleteMutation.mutate(
-      { id },
-      {
-        onSuccess: () => {
-          setDeleteConfirmId(null);
           queryClient.invalidateQueries({ queryKey: getListSetlistsQueryKey() });
         }
       }
@@ -136,19 +122,6 @@ export default function Setlists() {
                     </div>
                   </Link>
                   
-                  <div className="absolute top-4 right-4 z-20">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="bg-destructive/10 text-destructive active:bg-destructive/30 h-8 w-8 rounded-full"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setDeleteConfirmId(setlist.id);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
                 </div>
               ))}
             </div>
@@ -184,30 +157,6 @@ export default function Setlists() {
         </form>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={deleteConfirmId !== null}
-        onClose={() => setDeleteConfirmId(null)}
-        title="Delete Setlist"
-      >
-        <div className="space-y-6">
-          <p className="text-muted-foreground text-lg">
-            Are you sure you want to delete this setlist? This action cannot be undone.
-          </p>
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Yes, Delete"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

@@ -1,10 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Mic2, Pause, Play } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Pause,
+  Play,
+} from "lucide-react";
 import type { SetlistSong } from "@workspace/api-client-react";
 
-import { Button } from "@/components/Button";
 import { cn } from "@/lib/utils";
 
 type LyricLine = {
@@ -36,14 +43,16 @@ export function SetlistPresentationMode({
   setlistName: string;
   songs: SetlistSong[];
 }) {
+  const router = useRouter();
   const audioContextRef = useRef<AudioContext | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
   const [activeSongIndex, setActiveSongIndex] = useState(0);
   const [activeLineIndex, setActiveLineIndex] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [beat, setBeat] = useState(1);
-  const [lyricsBySongId, setLyricsBySongId] = useState<Record<number, PresentationLyrics>>({});
+  const [lyricsBySongId, setLyricsBySongId] = useState<
+    Record<number, PresentationLyrics>
+  >({});
   const [isLoadingLyrics, setIsLoadingLyrics] = useState(false);
 
   const activeSong = songs[activeSongIndex] ?? null;
@@ -51,19 +60,19 @@ export function SetlistPresentationMode({
   const activeLines = activeLyrics?.lines ?? [];
   const activeBpm = activeLyrics?.bpm ?? 120;
   const currentLine = activeLines[activeLineIndex] ?? null;
-  const previousLines = activeLines.slice(Math.max(0, activeLineIndex - 2), activeLineIndex);
+  const previousLines = activeLines.slice(
+    Math.max(0, activeLineIndex - 2),
+    activeLineIndex,
+  );
   const nextLines = activeLines.slice(activeLineIndex + 1, activeLineIndex + 3);
   const songDurationMs = useMemo(
     () => getPresentationSongDuration(activeSong, activeLines, activeBpm),
     [activeSong, activeLines, activeBpm],
   );
-  const playbackProgress = songDurationMs > 0 ? Math.min(100, (elapsedMs / songDurationMs) * 100) : 0;
+  const playbackProgress =
+    songDurationMs > 0 ? Math.min(100, (elapsedMs / songDurationMs) * 100) : 0;
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
     let cancelled = false;
 
     async function loadLyrics() {
@@ -71,7 +80,9 @@ export function SetlistPresentationMode({
       const entries = await Promise.all(
         songs.map(async (song) => {
           try {
-            const response = await fetch(`/api/setlists/${setlistId}/songs/${song.id}/lyrics`);
+            const response = await fetch(
+              `/api/setlists/${setlistId}/songs/${song.id}/lyrics`,
+            );
             if (!response.ok) {
               return [song.id, createFallbackLyrics(song)] as const;
             }
@@ -80,17 +91,20 @@ export function SetlistPresentationMode({
             const lines =
               payload.lines.length > 0
                 ? payload.lines
-                : normalizePlainLyrics(payload.plainLyrics).map((text, index) => ({
-                    index,
-                    text,
-                    startMs: null,
-                  }));
+                : normalizePlainLyrics(payload.plainLyrics).map(
+                    (text, index) => ({
+                      index,
+                      text,
+                      startMs: null,
+                    }),
+                  );
 
             return [
               song.id,
               {
                 bpm: payload.bpm ?? 120,
-                lines: lines.length > 0 ? lines : createFallbackLyrics(song).lines,
+                lines:
+                  lines.length > 0 ? lines : createFallbackLyrics(song).lines,
               },
             ] as const;
           } catch {
@@ -110,10 +124,10 @@ export function SetlistPresentationMode({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, setlistId, songs]);
+  }, [setlistId, songs]);
 
   useEffect(() => {
-    if (!isOpen || !isPlaying) {
+    if (!isPlaying) {
       return;
     }
 
@@ -122,10 +136,10 @@ export function SetlistPresentationMode({
     }, 100);
 
     return () => window.clearInterval(interval);
-  }, [isOpen, isPlaying]);
+  }, [isPlaying]);
 
   useEffect(() => {
-    if (!isOpen || !isPlaying) {
+    if (!isPlaying) {
       return;
     }
 
@@ -141,18 +155,23 @@ export function SetlistPresentationMode({
     const interval = window.setInterval(tick, intervalMs);
 
     return () => window.clearInterval(interval);
-  }, [activeBpm, activeSong?.id, isOpen, isPlaying]);
+  }, [activeBpm, activeSong?.id, isPlaying]);
 
   useEffect(() => {
-    if (!isOpen || activeLines.length === 0) {
+    if (activeLines.length === 0) {
       return;
     }
 
     setActiveLineIndex(findActiveLineIndex(activeLines, elapsedMs, activeBpm));
-  }, [activeBpm, activeLines, elapsedMs, isOpen]);
+  }, [activeBpm, activeLines, elapsedMs]);
 
   useEffect(() => {
-    if (!isOpen || !isPlaying || !activeSong || isLoadingLyrics || elapsedMs < songDurationMs) {
+    if (
+      !isPlaying ||
+      !activeSong ||
+      isLoadingLyrics ||
+      elapsedMs < songDurationMs
+    ) {
       return;
     }
 
@@ -167,20 +186,15 @@ export function SetlistPresentationMode({
     activeSongIndex,
     elapsedMs,
     isLoadingLyrics,
-    isOpen,
     isPlaying,
     songDurationMs,
     songs.length,
   ]);
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        closePresentation();
+        router.push(`/setlists/${setlistId}`);
       }
       if (event.key === " ") {
         event.preventDefault();
@@ -196,25 +210,13 @@ export function SetlistPresentationMode({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeSongIndex, isOpen]);
-
-  function openPresentation() {
-    setActiveSongIndex(0);
-    setActiveLineIndex(0);
-    setElapsedMs(0);
-    setBeat(1);
-    setIsOpen(true);
-    setIsPlaying(true);
-  }
-
-  function closePresentation() {
-    setIsPlaying(false);
-    setIsOpen(false);
-    setElapsedMs(0);
-  }
+  }, [activeSongIndex, router, setlistId]);
 
   function goToSong(nextIndex: number) {
-    const boundedIndex = Math.min(Math.max(nextIndex, 0), Math.max(songs.length - 1, 0));
+    const boundedIndex = Math.min(
+      Math.max(nextIndex, 0),
+      Math.max(songs.length - 1, 0),
+    );
     setActiveSongIndex(boundedIndex);
     setActiveLineIndex(0);
     setElapsedMs(0);
@@ -222,10 +224,15 @@ export function SetlistPresentationMode({
   }
 
   function moveLine(direction: -1 | 1) {
-    const nextIndex = Math.min(Math.max(activeLineIndex + direction, 0), Math.max(activeLines.length - 1, 0));
+    const nextIndex = Math.min(
+      Math.max(activeLineIndex + direction, 0),
+      Math.max(activeLines.length - 1, 0),
+    );
     setActiveLineIndex(nextIndex);
     if (activeLines[nextIndex]) {
-      setElapsedMs(getLineStartMs(activeLines[nextIndex], nextIndex, activeBpm));
+      setElapsedMs(
+        getLineStartMs(activeLines[nextIndex], nextIndex, activeBpm),
+      );
     }
   }
 
@@ -233,7 +240,8 @@ export function SetlistPresentationMode({
     try {
       const AudioContextClass =
         window.AudioContext ??
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
       audioContextRef.current ??= new AudioContextClass();
       const context = audioContextRef.current;
       const oscillator = context.createOscillator();
@@ -250,158 +258,185 @@ export function SetlistPresentationMode({
     }
   }
 
+  if (songs.length === 0) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#020407] px-6 text-center text-white">
+        <h1 className="font-display text-3xl font-bold">Setlist vazia</h1>
+        <p className="max-w-md text-zinc-400">
+          Adicione musicas antes de iniciar o modo apresentacao.
+        </p>
+        <Link
+          href={`/setlists/${setlistId}`}
+          className="rounded-xl border border-cyan-300/30 px-5 py-3 font-medium text-cyan-100 transition hover:bg-cyan-300/10"
+        >
+          Voltar para setlist
+        </Link>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <Button variant="glow" onClick={openPresentation} disabled={songs.length === 0}>
-        <Mic2 className="mr-2 h-5 w-5" />
-        Apresentar
-      </Button>
+    <div className="relative flex h-screen min-h-screen flex-col overflow-hidden bg-[#020407] text-white">
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(34,211,238,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(236,72,153,0.035)_1px,transparent_1px)] bg-[size:72px_72px] opacity-70" />
+      <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-cyan-400/10 to-transparent" />
 
-      {isOpen ? (
-        <div className="fixed inset-0 z-50 flex h-screen flex-col overflow-hidden bg-[#020407] text-white">
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(34,211,238,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(236,72,153,0.035)_1px,transparent_1px)] bg-[size:72px_72px] opacity-70" />
-          <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-cyan-400/10 to-transparent" />
+      <header className="relative z-10 flex h-20 flex-shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-black/60 px-4 backdrop-blur-xl sm:px-8">
+        <Link
+          href={`/setlists/${setlistId}`}
+          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-white/10 text-zinc-400 transition hover:border-cyan-300/50 hover:text-cyan-200"
+          aria-label="Voltar para setlist"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
 
-          <header className="relative z-10 flex h-20 flex-shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-black/60 px-4 backdrop-blur-xl sm:px-8">
+        <div className="min-w-0 flex-1 text-center">
+          <p className="truncate text-xs font-semibold uppercase text-cyan-200/70">
+            {setlistName}
+          </p>
+          <h2 className="truncate font-display text-xl font-bold text-white sm:text-3xl">
+            {activeSong?.title ?? "Setlist"}
+          </h2>
+          <p className="truncate text-sm text-zinc-400">{activeSong?.artist}</p>
+        </div>
+
+        <div className="flex h-11 min-w-11 flex-shrink-0 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-300/5 px-3 font-mono text-sm font-bold text-cyan-200">
+          {activeSongIndex + 1}/{songs.length}
+        </div>
+      </header>
+
+      <main className="relative z-10 grid flex-1 grid-rows-[1fr_auto_1fr] px-5 pb-56 pt-6 text-center sm:px-10 sm:pb-40">
+        <div className="flex flex-col items-center justify-end gap-3 pb-6 text-xl font-semibold leading-tight text-zinc-500 sm:text-3xl">
+          {previousLines.map((line) => (
+            <p
+              key={`previous-${activeSong?.id}-${line.index}`}
+              className="max-w-5xl"
+            >
+              {line.text}
+            </p>
+          ))}
+        </div>
+
+        <div className="flex min-h-[28vh] items-center justify-center border-y border-cyan-300/10 py-6">
+          <p className="max-w-6xl break-words text-[clamp(2.25rem,5.8vw,5.75rem)] font-black leading-[1.08] text-cyan-100 [overflow-wrap:anywhere] [text-shadow:0_0_22px_rgba(34,211,238,0.45)]">
+            {isLoadingLyrics
+              ? "Carregando letras"
+              : (currentLine?.text ?? activeSong?.title ?? "Sem musica")}
+          </p>
+        </div>
+
+        <div className="flex flex-col items-center justify-start gap-3 pt-6 text-xl font-semibold leading-tight text-zinc-500 sm:text-3xl">
+          {nextLines.map((line) => (
+            <p
+              key={`next-${activeSong?.id}-${line.index}`}
+              className="max-w-5xl"
+            >
+              {line.text}
+            </p>
+          ))}
+        </div>
+      </main>
+
+      <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-black/80 px-4 py-4 backdrop-blur-xl sm:px-8">
+        <div className="mb-4 h-2 overflow-hidden rounded-full bg-white/10">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-fuchsia-400"
+            style={{ width: `${playbackProgress}%` }}
+          />
+        </div>
+
+        <div className="grid items-center gap-3 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
+          <div className="flex items-center justify-center gap-2 sm:justify-start">
             <button
               type="button"
-              onClick={closePresentation}
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-white/10 text-zinc-400 transition hover:border-cyan-300/50 hover:text-cyan-200"
-              aria-label="Fechar modo apresentacao"
+              onClick={() => goToSong(activeSongIndex - 1)}
+              disabled={activeSongIndex === 0}
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 text-zinc-300 transition hover:border-cyan-300/50 hover:text-cyan-200 disabled:opacity-30"
+              aria-label="Musica anterior"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ChevronLeft className="h-5 w-5" />
             </button>
+            <button
+              type="button"
+              onClick={() => setIsPlaying((current) => !current)}
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/10 text-cyan-200 transition hover:bg-cyan-300/20"
+              aria-label={
+                isPlaying ? "Pausar apresentacao" : "Tocar apresentacao"
+              }
+            >
+              {isPlaying ? (
+                <Pause className="h-5 w-5" />
+              ) : (
+                <Play className="h-5 w-5" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => goToSong(activeSongIndex + 1)}
+              disabled={activeSongIndex >= songs.length - 1}
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 text-zinc-300 transition hover:border-cyan-300/50 hover:text-cyan-200 disabled:opacity-30"
+              aria-label="Proxima musica"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
 
-            <div className="min-w-0 flex-1 text-center">
-              <p className="truncate text-xs font-semibold uppercase text-cyan-200/70">{setlistName}</p>
-              <h2 className="truncate font-display text-xl font-bold text-white sm:text-3xl">
-                {activeSong?.title ?? "Setlist"}
-              </h2>
-              <p className="truncate text-sm text-zinc-400">{activeSong?.artist}</p>
-            </div>
-
-            <div className="flex h-11 min-w-11 flex-shrink-0 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-300/5 px-3 font-mono text-sm font-bold text-cyan-200">
-              {activeSongIndex + 1}/{songs.length}
-            </div>
-          </header>
-
-          <main className="relative z-10 grid flex-1 grid-rows-[1fr_auto_1fr] px-5 py-6 text-center sm:px-10">
-            <div className="flex flex-col items-center justify-end gap-3 pb-6 text-xl font-semibold leading-tight text-zinc-500 sm:text-3xl">
-              {previousLines.map((line) => (
-                <p key={`previous-${activeSong?.id}-${line.index}`} className="max-w-5xl">
-                  {line.text}
+          <div className="flex min-w-0 gap-2 overflow-x-auto py-1">
+            {songs.map((song, index) => (
+              <button
+                key={song.id}
+                type="button"
+                onClick={() => goToSong(index)}
+                className={cn(
+                  "min-w-36 rounded-lg border px-3 py-2 text-left transition",
+                  index === activeSongIndex
+                    ? "border-cyan-300/70 bg-cyan-300/10 text-white"
+                    : "border-white/10 bg-white/[0.03] text-zinc-500 hover:border-white/25",
+                )}
+              >
+                <p className="truncate text-xs font-semibold uppercase">
+                  {index + 1}
                 </p>
-              ))}
-            </div>
+                <p className="truncate text-sm font-bold">{song.title}</p>
+              </button>
+            ))}
+          </div>
 
-            <div className="flex min-h-[28vh] items-center justify-center border-y border-cyan-300/10 py-6">
-              <p className="max-w-6xl break-words text-[clamp(2.25rem,5.8vw,5.75rem)] font-black leading-[1.08] text-cyan-100 [overflow-wrap:anywhere] [text-shadow:0_0_22px_rgba(34,211,238,0.45)]">
-                {isLoadingLyrics ? "Carregando letras" : currentLine?.text ?? activeSong?.title ?? "Sem musica"}
+          <div className="grid grid-cols-3 gap-2 text-center sm:min-w-64">
+            <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+              <p className="text-xs uppercase text-zinc-500">Tempo</p>
+              <p className="font-mono text-sm text-cyan-100">
+                {formatMs(elapsedMs)}
               </p>
             </div>
-
-            <div className="flex flex-col items-center justify-start gap-3 pt-6 text-xl font-semibold leading-tight text-zinc-500 sm:text-3xl">
-              {nextLines.map((line) => (
-                <p key={`next-${activeSong?.id}-${line.index}`} className="max-w-5xl">
-                  {line.text}
-                </p>
-              ))}
+            <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+              <p className="text-xs uppercase text-zinc-500">BPM</p>
+              <p className="font-mono text-sm text-cyan-100">{activeBpm}</p>
             </div>
-          </main>
-
-          <footer className="relative z-10 border-t border-white/10 bg-black/70 px-4 py-4 backdrop-blur-xl sm:px-8">
-            <div className="mb-4 h-2 overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-fuchsia-400"
-                style={{ width: `${playbackProgress}%` }}
-              />
+            <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+              <p className="text-xs uppercase text-zinc-500">Beat</p>
+              <p className="font-mono text-sm text-cyan-100">{beat}</p>
             </div>
-
-            <div className="grid items-center gap-3 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
-              <div className="flex items-center justify-center gap-2 sm:justify-start">
-                <button
-                  type="button"
-                  onClick={() => goToSong(activeSongIndex - 1)}
-                  disabled={activeSongIndex === 0}
-                  className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 text-zinc-300 transition hover:border-cyan-300/50 hover:text-cyan-200 disabled:opacity-30"
-                  aria-label="Musica anterior"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsPlaying((current) => !current)}
-                  className="flex h-12 w-12 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/10 text-cyan-200 transition hover:bg-cyan-300/20"
-                  aria-label={isPlaying ? "Pausar apresentacao" : "Tocar apresentacao"}
-                >
-                  {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => goToSong(activeSongIndex + 1)}
-                  disabled={activeSongIndex >= songs.length - 1}
-                  className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 text-zinc-300 transition hover:border-cyan-300/50 hover:text-cyan-200 disabled:opacity-30"
-                  aria-label="Proxima musica"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="flex min-w-0 gap-2 overflow-x-auto py-1">
-                {songs.map((song, index) => (
-                  <button
-                    key={song.id}
-                    type="button"
-                    onClick={() => goToSong(index)}
-                    className={cn(
-                      "min-w-36 rounded-lg border px-3 py-2 text-left transition",
-                      index === activeSongIndex
-                        ? "border-cyan-300/70 bg-cyan-300/10 text-white"
-                        : "border-white/10 bg-white/[0.03] text-zinc-500 hover:border-white/25",
-                    )}
-                  >
-                    <p className="truncate text-xs font-semibold uppercase">{index + 1}</p>
-                    <p className="truncate text-sm font-bold">{song.title}</p>
-                  </button>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 text-center sm:min-w-64">
-                <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
-                  <p className="text-xs uppercase text-zinc-500">Tempo</p>
-                  <p className="font-mono text-sm text-cyan-100">{formatMs(elapsedMs)}</p>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
-                  <p className="text-xs uppercase text-zinc-500">BPM</p>
-                  <p className="font-mono text-sm text-cyan-100">{activeBpm}</p>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
-                  <p className="text-xs uppercase text-zinc-500">Beat</p>
-                  <p className="font-mono text-sm text-cyan-100">{beat}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-3 flex justify-center gap-2 sm:hidden">
-              <button
-                type="button"
-                onClick={() => moveLine(-1)}
-                className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300"
-              >
-                Linha anterior
-              </button>
-              <button
-                type="button"
-                onClick={() => moveLine(1)}
-                className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300"
-              >
-                Proxima linha
-              </button>
-            </div>
-          </footer>
+          </div>
         </div>
-      ) : null}
-    </>
+
+        <div className="mt-3 flex justify-center gap-2 sm:hidden">
+          <button
+            type="button"
+            onClick={() => moveLine(-1)}
+            className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300"
+          >
+            Linha anterior
+          </button>
+          <button
+            type="button"
+            onClick={() => moveLine(1)}
+            className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300"
+          >
+            Proxima linha
+          </button>
+        </div>
+      </footer>
+    </div>
   );
 }
 
@@ -422,7 +457,11 @@ function normalizePlainLyrics(rawLyrics: string) {
     .filter(Boolean);
 }
 
-function findActiveLineIndex(lines: LyricLine[], elapsedMs: number, bpm: number) {
+function findActiveLineIndex(
+  lines: LyricLine[],
+  elapsedMs: number,
+  bpm: number,
+) {
   let activeIndex = 0;
 
   for (let index = 0; index < lines.length; index += 1) {
@@ -443,10 +482,16 @@ function getFallbackLineDurationMs(bpm: number) {
   return (60_000 / safeBpm) * 4;
 }
 
-function getPresentationSongDuration(song: SetlistSong | null, lines: LyricLine[], bpm: number) {
+function getPresentationSongDuration(
+  song: SetlistSong | null,
+  lines: LyricLine[],
+  bpm: number,
+) {
   const lineDurationMs = getFallbackLineDurationMs(bpm);
   const lastLineStartMs =
-    lines.length > 0 ? getLineStartMs(lines[lines.length - 1], lines.length - 1, bpm) : 0;
+    lines.length > 0
+      ? getLineStartMs(lines[lines.length - 1], lines.length - 1, bpm)
+      : 0;
   const lyricsDurationMs = lastLineStartMs + lineDurationMs;
 
   return Math.max(song?.durationMs ?? 0, lyricsDurationMs, lineDurationMs);
