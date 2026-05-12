@@ -69,6 +69,47 @@ const emptyDraft: Draft = {
 
 const WAVEFORM_BAR_COUNT = 96;
 
+type YouTubePlayer = {
+  destroy: () => void;
+  getCurrentTime: () => number;
+  getDuration: () => number;
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+};
+
+type YouTubePlayerEvent = {
+  target: YouTubePlayer;
+};
+
+type YouTubePlayerStateChangeEvent = YouTubePlayerEvent & {
+  data: number;
+};
+
+type YouTubeApi = {
+  Player: new (
+    element: HTMLElement,
+    options: {
+      videoId: string;
+      playerVars?: Record<string, number | string>;
+      events?: {
+        onReady?: (event: YouTubePlayerEvent) => void;
+        onStateChange?: (event: YouTubePlayerStateChangeEvent) => void;
+      };
+    },
+  ) => YouTubePlayer;
+  PlayerState: {
+    PLAYING: number;
+  };
+};
+
+declare global {
+  interface Window {
+    YT?: YouTubeApi;
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
+let youtubeApiPromise: Promise<YouTubeApi> | null = null;
+
 export function LyricsSyncPanel({
   setlistId,
   song,
@@ -78,6 +119,9 @@ export function LyricsSyncPanel({
 }) {
   const { toast } = useToast();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const youtubeContainerRef = useRef<HTMLDivElement | null>(null);
+  const youtubePlayerRef = useRef<YouTubePlayer | null>(null);
+  const youtubeIsPlayingRef = useRef(false);
   const metronomeRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -103,7 +147,12 @@ export function LyricsSyncPanel({
 
   const currentLine = draft.lines[selectedLine] ?? null;
   const syncedCount = draft.lines.filter((line) => line.startMs != null).length;
-  const previewAudioSrc = localAudioUrl || draft.audioUrl;
+  const youtubeVideoId = useMemo(
+    () => (localAudioUrl ? null : getYouTubeVideoId(draft.audioUrl)),
+    [draft.audioUrl, localAudioUrl],
+  );
+  const previewAudioSrc = localAudioUrl || (youtubeVideoId ? "" : draft.audioUrl);
+  const hasPreviewSource = Boolean(previewAudioSrc || youtubeVideoId);
   const syncProgress =
     draft.lines.length > 0 ? Math.round((syncedCount / draft.lines.length) * 100) : 0;
   const songDurationMs = song?.durationMs ?? 0;
@@ -188,6 +237,26 @@ export function LyricsSyncPanel({
 
   useEffect(() => {
     const interval = setInterval(() => {
+      const youtubePlayer = youtubePlayerRef.current;
+      if (youtubePlayer && youtubeVideoId) {
+        const nextElapsedMs = Math.round(youtubePlayer.getCurrentTime() * 1_000);
+        setElapsedMs(nextElapsedMs);
+
+        const nextDurationMs = Math.round(youtubePlayer.getDuration() * 1_000);
+        if (nextDurationMs > 0) {
+          setAudioDurationMs(nextDurationMs);
+        }
+
+        if (youtubeIsPlayingRef.current) {
+          const activeIndex = findActiveLineIndex(draft.lines, nextElapsedMs);
+          if (activeIndex >= 0) {
+            setSelectedLine(activeIndex);
+          }
+        }
+
+        return;
+      }
+
       const audio = audioRef.current;
       if (!audio) {
         return;
@@ -205,7 +274,7 @@ export function LyricsSyncPanel({
     }, 200);
 
     return () => window.clearInterval(interval);
-  }, [draft.lines]);
+  }, [draft.lines, youtubeVideoId]);
 
   useEffect(() => {
     return () => stopMetronome();
@@ -225,6 +294,13 @@ export function LyricsSyncPanel({
 
     setWaveformBars(createFallbackWaveform(WAVEFORM_BAR_COUNT, seed));
     setAudioDurationMs(0);
+
+    if (youtubeVideoId) {
+      setWaveformStatus("fallback");
+      return () => {
+        cancelled = true;
+      };
+    }
 
     if (!previewAudioSrc) {
       setWaveformStatus("idle");
@@ -276,7 +352,77 @@ export function LyricsSyncPanel({
     return () => {
       cancelled = true;
     };
-  }, [previewAudioSrc, song]);
+  }, [previewAudioSrc, song, youtubeVideoId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    youtubeIsPlayingRef.current = false;
+
+    if (!youtubeVideoId) {
+      youtubePlayerRef.current?.destroy();
+      youtubePlayerRef.current = null;
+      return;
+    }
+
+    const activeYoutubeVideoId = youtubeVideoId;
+    const container = youtubeContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    setAudioDurationMs(0);
+
+    async function loadPlayer() {
+      try {
+        const api = await loadYouTubeIframeApi();
+        if (cancelled || !youtubeContainerRef.current) {
+          return;
+        }
+
+        youtubePlayerRef.current?.destroy();
+        youtubePlayerRef.current = new api.Player(youtubeContainerRef.current, {
+          videoId: activeYoutubeVideoId,
+          playerVars: {
+            controls: 1,
+            modestbranding: 1,
+            rel: 0,
+          },
+          events: {
+            onReady: (event) => {
+              if (cancelled) {
+                return;
+              }
+
+              const durationMs = Math.round(event.target.getDuration() * 1_000);
+              if (durationMs > 0) {
+                setAudioDurationMs(durationMs);
+              }
+            },
+            onStateChange: (event) => {
+              youtubeIsPlayingRef.current = event.data === api.PlayerState.PLAYING;
+            },
+          },
+        });
+      } catch {
+        if (!cancelled) {
+          toast({
+            title: "Nao foi possivel carregar o YouTube",
+            description: "Use um arquivo local ou uma URL direta de audio para continuar.",
+            variant: "destructive",
+          });
+        }
+      }
+    }
+
+    void loadPlayer();
+
+    return () => {
+      cancelled = true;
+      youtubeIsPlayingRef.current = false;
+      youtubePlayerRef.current?.destroy();
+      youtubePlayerRef.current = null;
+    };
+  }, [toast, youtubeVideoId]);
 
   function applyPlainLyrics() {
     const lines = normalizePlainLyrics(draft.plainLyrics).map((text, index) => ({
@@ -327,9 +473,20 @@ export function LyricsSyncPanel({
   }
 
   function markCurrentTimestamp() {
+    const youtubePlayer = youtubePlayerRef.current;
+    if (youtubePlayer && youtubeVideoId) {
+      const timestampMs = Math.round(youtubePlayer.getCurrentTime() * 1_000);
+      markLineAt(timestampMs);
+      return;
+    }
+
     const audio = audioRef.current;
     const timestampMs = audio ? Math.round(audio.currentTime * 1_000) : elapsedMs;
 
+    markLineAt(timestampMs);
+  }
+
+  function markLineAt(timestampMs: number) {
     setDraft((current) => ({
       ...current,
       lines: current.lines.map((line, index) =>
@@ -361,6 +518,20 @@ export function LyricsSyncPanel({
     const durationMs = seekableDurationMs;
     const safeElapsedMs =
       durationMs > 0 ? Math.min(Math.max(nextElapsedMs, 0), durationMs) : Math.max(nextElapsedMs, 0);
+    const youtubePlayer = youtubePlayerRef.current;
+
+    if (youtubePlayer && youtubeVideoId) {
+      youtubePlayer.seekTo(safeElapsedMs / 1_000, true);
+      setElapsedMs(Math.round(safeElapsedMs));
+
+      const activeIndex = findActiveLineIndex(draft.lines, safeElapsedMs);
+      if (activeIndex >= 0) {
+        setSelectedLine(activeIndex);
+      }
+
+      return;
+    }
+
     const audio = audioRef.current;
 
     if (audio && previewAudioSrc) {
@@ -606,7 +777,14 @@ export function LyricsSyncPanel({
                   className="border-cyan-300/10 bg-slate-950/70"
                   placeholder="URL temporaria de audio para preview"
                 />
-                {previewAudioSrc ? (
+                {youtubeVideoId ? (
+                  <>
+                    <div className="overflow-hidden rounded-xl border border-cyan-300/10 bg-black">
+                      <div ref={youtubeContainerRef} className="aspect-video w-full" />
+                    </div>
+                    <audio ref={audioRef} className="hidden" />
+                  </>
+                ) : previewAudioSrc ? (
                   <audio
                     ref={audioRef}
                     src={previewAudioSrc}
@@ -728,7 +906,7 @@ export function LyricsSyncPanel({
 
               <AudioWaveformSeek
                 bars={waveformBars}
-                disabled={!previewAudioSrc || seekableDurationMs <= 0}
+                disabled={!hasPreviewSource || seekableDurationMs <= 0}
                 durationMs={seekableDurationMs}
                 elapsedMs={elapsedMs}
                 status={waveformStatus}
@@ -806,6 +984,93 @@ function normalizePlainLyrics(rawLyrics: string) {
     .split(/\r?\n/)
     .map((line) => line.replace(/\s+/g, " ").trim())
     .filter(Boolean);
+}
+
+function getYouTubeVideoId(rawUrl: string) {
+  const normalizedUrl = rawUrl.trim();
+  if (!normalizedUrl) {
+    return null;
+  }
+
+  let url: URL;
+  try {
+    url = new URL(normalizedUrl);
+  } catch {
+    return null;
+  }
+
+  const hostname = url.hostname.toLowerCase();
+  if (!isYouTubeHostname(hostname)) {
+    return null;
+  }
+
+  if (hostname === "youtu.be") {
+    return normalizeYouTubeVideoId(url.pathname.split("/").filter(Boolean)[0]);
+  }
+
+  const watchVideoId = normalizeYouTubeVideoId(url.searchParams.get("v"));
+  if (watchVideoId) {
+    return watchVideoId;
+  }
+
+  const [section, videoId] = url.pathname.split("/").filter(Boolean);
+  if (section && ["embed", "live", "shorts", "v"].includes(section)) {
+    return normalizeYouTubeVideoId(videoId);
+  }
+
+  return null;
+}
+
+function isYouTubeHostname(hostname: string) {
+  return (
+    hostname === "youtu.be" ||
+    hostname === "youtube.com" ||
+    hostname.endsWith(".youtube.com") ||
+    hostname === "youtube-nocookie.com" ||
+    hostname.endsWith(".youtube-nocookie.com")
+  );
+}
+
+function normalizeYouTubeVideoId(videoId: string | null | undefined) {
+  if (!videoId || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+    return null;
+  }
+
+  return videoId;
+}
+
+function loadYouTubeIframeApi() {
+  if (window.YT?.Player) {
+    return Promise.resolve(window.YT);
+  }
+
+  youtubeApiPromise ??= new Promise<YouTubeApi>((resolve, reject) => {
+    const previousReady = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      previousReady?.();
+
+      if (window.YT?.Player) {
+        resolve(window.YT);
+      } else {
+        reject(new Error("YouTube IFrame API is unavailable"));
+      }
+    };
+
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      'script[src="https://www.youtube.com/iframe_api"]',
+    );
+    if (existingScript) {
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://www.youtube.com/iframe_api";
+    script.async = true;
+    script.onerror = () => reject(new Error("YouTube IFrame API failed to load"));
+    document.head.appendChild(script);
+  });
+
+  return youtubeApiPromise;
 }
 
 function readLocalDraft(storageKey: string): Partial<Draft> | null {
