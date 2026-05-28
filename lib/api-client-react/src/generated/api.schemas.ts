@@ -32,8 +32,12 @@ export interface SetlistSong {
   title: string;
   artist: string;
   durationMs: number;
+  /** @nullable */
+  bpm?: number | null;
+  deezerId?: string;
   spotifyId?: string;
-  albumArt?: string;
+  /** @nullable */
+  albumArt?: string | null;
 }
 
 export interface SetlistWithSongs {
@@ -55,8 +59,12 @@ export interface AddSongInput {
   title: string;
   artist: string;
   durationMs: number;
+  /** @nullable */
+  bpm?: number | null;
+  deezerId?: string;
   spotifyId?: string;
-  albumArt?: string;
+  /** @nullable */
+  albumArt?: string | null;
 }
 
 export interface ReorderSongsInput {
@@ -64,16 +72,88 @@ export interface ReorderSongsInput {
   songIds: number[];
 }
 
-export interface SpotifyTrack {
+export interface DeezerTrack {
   id: string;
   title: string;
   artist: string;
   durationMs: number;
-  albumArt?: string;
+  /** @nullable */
+  bpm?: number | null;
+  /** @nullable */
+  albumArt?: string | null;
   album?: string;
 }
 
-export type SearchSpotifyTracksParams = {
+export interface LyricLine {
+  index: number;
+  text: string;
+  /**
+   * Milliseconds from audio start. Null for unsynced/manual draft lines.
+   * @nullable
+   */
+  startMs: number | null;
+}
+
+export type SongLyricsSource =
+  (typeof SongLyricsSource)[keyof typeof SongLyricsSource];
+
+export const SongLyricsSource = {
+  lrclib: "lrclib",
+  manual: "manual",
+} as const;
+
+export interface SongLyrics {
+  id: number;
+  songId: number;
+  source: SongLyricsSource;
+  /** @nullable */
+  lrclibId: number | null;
+  plainLyrics: string;
+  /** @nullable */
+  syncedLyrics: string | null;
+  lines: LyricLine[];
+  /** @nullable */
+  bpm: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type SaveSongLyricsInputSource =
+  (typeof SaveSongLyricsInputSource)[keyof typeof SaveSongLyricsInputSource];
+
+export const SaveSongLyricsInputSource = {
+  lrclib: "lrclib",
+  manual: "manual",
+} as const;
+
+export interface SaveSongLyricsInput {
+  source: SaveSongLyricsInputSource;
+  /** @nullable */
+  lrclibId?: number | null;
+  plainLyrics: string;
+  /** @nullable */
+  syncedLyrics?: string | null;
+  lines?: LyricLine[];
+  /** @nullable */
+  bpm?: number | null;
+}
+
+export interface LrclibLyricsResult {
+  id: number;
+  trackName: string;
+  artistName: string;
+  /** @nullable */
+  albumName: string | null;
+  /** @nullable */
+  duration: number | null;
+  instrumental: boolean;
+  plainLyrics: string;
+  /** @nullable */
+  syncedLyrics: string | null;
+  lines: LyricLine[];
+}
+
+export type SearchDeezerTracksParams = {
   /**
    * Search query
    */

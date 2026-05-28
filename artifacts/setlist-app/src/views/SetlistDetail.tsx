@@ -31,15 +31,15 @@ import {
   useDeleteSetlist,
   getGetSetlistQueryKey,
   getListSetlistsQueryKey,
+  type DeezerTrack,
   type SetlistSong,
   type SetlistWithSongs,
-  type SpotifyTrack,
 } from "@workspace/api-client-react";
 
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { Modal } from "@/components/Modal";
-import { SpotifySearch } from "@/components/SpotifySearch";
+import { DeezerSearch } from "@/components/DeezerSearch";
 import { formatDuration, cn } from "@/lib/utils";
 
 type LyricLine = {
@@ -148,6 +148,7 @@ export default function SetlistDetail() {
             plainLyrics: lyrics.plainLyrics,
             syncedLyrics: lyrics.syncedLyrics,
             lines: lyrics.lines,
+            bpm: song.bpm ?? null,
           }),
         },
       );
@@ -166,7 +167,7 @@ export default function SetlistDetail() {
     }
   };
 
-  const handleAddTrack = (track: SpotifyTrack) => {
+  const handleAddTrack = (track: DeezerTrack) => {
     addSongMutation.mutate(
       {
         id: setId,
@@ -174,7 +175,8 @@ export default function SetlistDetail() {
           title: track.title,
           artist: track.artist,
           durationMs: track.durationMs,
-          spotifyId: track.id,
+          bpm: track.bpm,
+          deezerId: track.id,
           albumArt: track.albumArt,
         },
       },
@@ -397,7 +399,7 @@ export default function SetlistDetail() {
                 <Music className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-bold mb-2">No tracks yet</h3>
                 <p className="text-muted-foreground">
-                  Search Spotify on the right to add songs to this setlist.
+                  Search Deezer on the right to add songs to this setlist.
                 </p>
               </div>
             ) : (
@@ -465,6 +467,9 @@ export default function SetlistDetail() {
                               <div className="text-right font-mono font-medium text-foreground tracking-tight w-16">
                                 {formatDuration(song.durationMs)}
                               </div>
+                              <div className="hidden w-16 text-right font-mono text-xs font-semibold text-primary sm:block">
+                                {song.bpm ? `${song.bpm} BPM` : "-- BPM"}
+                              </div>
 
                               <Button
                                 asChild
@@ -507,9 +512,9 @@ export default function SetlistDetail() {
             )}
           </div>
 
-          {/* Spotify Search Sidebar */}
+          {/* Deezer Search Sidebar */}
           <div className="lg:col-span-1 h-[600px] lg:h-[calc(100vh-250px)] lg:sticky lg:top-28">
-            <SpotifySearch
+            <DeezerSearch
               onAddTrack={handleAddTrack}
               isAdding={addSongMutation.isPending}
             />

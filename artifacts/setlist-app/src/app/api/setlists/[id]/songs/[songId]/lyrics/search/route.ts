@@ -1,5 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { db, fetchLrclibLyrics } from "@workspace/db";
+import {
+  db,
+  ensureSetlistSongsBpmColumn,
+  fetchLrclibLyrics,
+} from "@workspace/db";
 
 type RouteContext = {
   params:
@@ -17,6 +21,8 @@ export async function POST(_request: NextRequest, context: RouteContext) {
   }
 
   try {
+    await ensureSetlistSongsBpmColumn();
+
     const song = await db.setlistSong.findFirst({
       where: { id: songId, setlistId },
     });

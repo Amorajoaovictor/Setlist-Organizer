@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { db } from "@workspace/db";
+import { db, ensureSetlistSongsBpmColumn } from "@workspace/db";
 import { z } from "zod/v4";
 
 type RouteContext = {
@@ -19,6 +19,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   }
 
   try {
+    await ensureSetlistSongsBpmColumn();
+
     const setlist = await db.setlist.findUnique({
       where: { id },
       include: { songs: { orderBy: { position: "asc" } } },
@@ -30,7 +32,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
     return NextResponse.json(setlist);
   } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -59,7 +64,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const setlist = await db.setlist.findUniqueOrThrow({ where: { id } });
     return NextResponse.json(setlist);
   } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -73,6 +81,9 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     await db.setlist.deleteMany({ where: { id } });
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

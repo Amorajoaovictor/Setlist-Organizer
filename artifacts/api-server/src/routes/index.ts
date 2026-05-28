@@ -1,12 +1,12 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import setlistsRouter from "./setlists";
-import spotifyRouter from "./spotify";
+import deezerRouter from "./deezer";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use("/setlists", setlistsRouter);
-router.use("/spotify", spotifyRouter);
+router.use("/deezer", deezerRouter);
 
 export default router;

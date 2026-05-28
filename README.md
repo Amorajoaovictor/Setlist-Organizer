@@ -1,6 +1,6 @@
 # SetlistOS
 
-SetlistOS is a Next.js app for organizing band setlists, searching Spotify tracks, adding songs, reordering them by drag-and-drop, and tracking total runtime.
+SetlistOS is a Next.js app for organizing band setlists, searching Deezer tracks, adding songs, reordering them by drag-and-drop, and tracking total runtime.
 
 ## Stack
 
@@ -25,8 +25,9 @@ Required variables:
 
 ```bash
 DATABASE_URL="postgresql://user:password@host:5432/database"
-SPOTIFY_CLIENT_ID="your_spotify_client_id"
-SPOTIFY_CLIENT_SECRET="your_spotify_client_secret"
+# Optional Spotify OAuth login.
+AUTH_SPOTIFY_ID="your_spotify_oauth_client_id"
+AUTH_SPOTIFY_SECRET="your_spotify_oauth_client_secret"
 ```
 
 ## Install
@@ -76,7 +77,7 @@ DELETE /api/setlists/:id
 POST   /api/setlists/:id/songs
 DELETE /api/setlists/:id/songs/:songId
 PUT    /api/setlists/:id/songs/reorder
-GET    /api/spotify/search?q=...
+GET    /api/deezer/search?q=...
 ```
 
 ## Build

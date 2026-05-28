@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { searchTracks } from "@/server/spotify";
+import { searchTracks } from "@/server/deezer";
 
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q")?.trim() ?? "";
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(tracks);
   } catch {
     return NextResponse.json(
-      { error: "Failed to search Spotify" },
+      { error: "Failed to search Deezer" },
       { status: 500 },
     );
   }

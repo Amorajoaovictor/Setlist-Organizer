@@ -23,6 +23,8 @@ model SetlistSong {
   title      String
   artist     String
   durationMs Int                 @map("duration_ms")
+  bpm        Int?
+  deezerId   String?             @map("deezer_id")
   spotifyId  String?             @map("spotify_id")
   albumArt   String?             @map("album_art")
   setlist    Setlist             @relation(fields: [setlistId], references: [id], onDelete: Cascade)

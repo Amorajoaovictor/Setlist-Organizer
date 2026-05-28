@@ -52,8 +52,10 @@ export const GetSetlistResponse = zod.object({
       title: zod.string(),
       artist: zod.string(),
       durationMs: zod.number(),
+      bpm: zod.number().nullish(),
+      deezerId: zod.string().optional(),
       spotifyId: zod.string().optional(),
-      albumArt: zod.string().optional(),
+      albumArt: zod.string().nullish(),
     }),
   ),
 });
@@ -99,8 +101,10 @@ export const AddSongToSetlistBody = zod.object({
   title: zod.string(),
   artist: zod.string(),
   durationMs: zod.number(),
+  bpm: zod.number().nullish(),
+  deezerId: zod.string().optional(),
   spotifyId: zod.string().optional(),
-  albumArt: zod.string().optional(),
+  albumArt: zod.string().nullish(),
 });
 
 /**
@@ -113,6 +117,123 @@ export const RemoveSongFromSetlistParams = zod.object({
 
 export const RemoveSongFromSetlistResponse = zod.object({
   success: zod.boolean(),
+});
+
+/**
+ * @summary Get stored lyrics for a setlist song
+ */
+export const GetSongLyricsParams = zod.object({
+  id: zod.coerce.number(),
+  songId: zod.coerce.number(),
+});
+
+export const GetSongLyricsResponse = zod.object({
+  id: zod.number(),
+  songId: zod.number(),
+  source: zod.enum(["lrclib", "manual"]),
+  lrclibId: zod.number().nullable(),
+  plainLyrics: zod.string(),
+  syncedLyrics: zod.string().nullable(),
+  lines: zod.array(
+    zod.object({
+      index: zod.number(),
+      text: zod.string(),
+      startMs: zod
+        .number()
+        .nullable()
+        .describe(
+          "Milliseconds from audio start. Null for unsynced\/manual draft lines.",
+        ),
+    }),
+  ),
+  bpm: zod.number().nullable(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Save manual or LRCLIB-derived synced lyrics
+ */
+export const SaveSongLyricsParams = zod.object({
+  id: zod.coerce.number(),
+  songId: zod.coerce.number(),
+});
+
+export const SaveSongLyricsBody = zod.object({
+  source: zod.enum(["lrclib", "manual"]),
+  lrclibId: zod.number().nullish(),
+  plainLyrics: zod.string(),
+  syncedLyrics: zod.string().nullish(),
+  lines: zod
+    .array(
+      zod.object({
+        index: zod.number(),
+        text: zod.string(),
+        startMs: zod
+          .number()
+          .nullable()
+          .describe(
+            "Milliseconds from audio start. Null for unsynced\/manual draft lines.",
+          ),
+      }),
+    )
+    .optional(),
+  bpm: zod.number().nullish(),
+});
+
+export const SaveSongLyricsResponse = zod.object({
+  id: zod.number(),
+  songId: zod.number(),
+  source: zod.enum(["lrclib", "manual"]),
+  lrclibId: zod.number().nullable(),
+  plainLyrics: zod.string(),
+  syncedLyrics: zod.string().nullable(),
+  lines: zod.array(
+    zod.object({
+      index: zod.number(),
+      text: zod.string(),
+      startMs: zod
+        .number()
+        .nullable()
+        .describe(
+          "Milliseconds from audio start. Null for unsynced\/manual draft lines.",
+        ),
+    }),
+  ),
+  bpm: zod.number().nullable(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Fetch lyrics and timestamps from LRCLIB for a setlist song
+ */
+export const SearchLrclibLyricsParams = zod.object({
+  id: zod.coerce.number(),
+  songId: zod.coerce.number(),
+});
+
+export const SearchLrclibLyricsResponse = zod.object({
+  id: zod.number(),
+  trackName: zod.string(),
+  artistName: zod.string(),
+  albumName: zod.string().nullable(),
+  duration: zod.number().nullable(),
+  instrumental: zod.boolean(),
+  plainLyrics: zod.string(),
+  syncedLyrics: zod.string().nullable(),
+  lines: zod.array(
+    zod.object({
+      index: zod.number(),
+      text: zod.string(),
+      startMs: zod
+        .number()
+        .nullable()
+        .describe(
+          "Milliseconds from audio start. Null for unsynced\/manual draft lines.",
+        ),
+    }),
+  ),
 });
 
 /**
@@ -131,20 +252,21 @@ export const ReorderSetlistSongsResponse = zod.object({
 });
 
 /**
- * @summary Search for tracks on Spotify
+ * @summary Search for tracks on Deezer
  */
-export const SearchSpotifyTracksQueryParams = zod.object({
+export const SearchDeezerTracksQueryParams = zod.object({
   q: zod.coerce.string().describe("Search query"),
 });
 
-export const SearchSpotifyTracksResponseItem = zod.object({
+export const SearchDeezerTracksResponseItem = zod.object({
   id: zod.string(),
   title: zod.string(),
   artist: zod.string(),
   durationMs: zod.number(),
-  albumArt: zod.string().optional(),
+  bpm: zod.number().nullish(),
+  albumArt: zod.string().nullish(),
   album: zod.string().optional(),
 });
-export const SearchSpotifyTracksResponse = zod.array(
-  SearchSpotifyTracksResponseItem,
+export const SearchDeezerTracksResponse = zod.array(
+  SearchDeezerTracksResponseItem,
 );

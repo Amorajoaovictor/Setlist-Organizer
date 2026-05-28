@@ -33,15 +33,16 @@ Esta lista organiza o backlog funcional e tecnico da aplicacao a partir do estad
 
 ## Musicas
 
-- [x] Buscar faixas no Spotify.
-- [x] Importar titulo, artista, duracao, capa e Spotify ID.
+- [x] Buscar faixas no Deezer.
+- [x] Importar titulo, artista, duracao, BPM, capa e Deezer ID.
 - [x] Adicionar musica a setlist.
 - [x] Remover musica.
 - [x] Reordenar musicas por drag-and-drop.
-- [ ] Permitir adicionar musica manualmente sem Spotify.
+- [ ] Permitir adicionar musica manualmente sem Deezer.
 - [ ] Permitir artista opcional para musica manual.
 - [ ] Avaliar criacao de entidade `Song` reutilizavel, separada de `SetlistSong`.
 - [ ] Validar que remocao de musica respeita a setlist informada.
+- [ ] Criar Virtual Sound.
 
 ## Feature 4: Letras
 

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { db } from "@workspace/db";
+import { db, ensureSetlistSongsBpmColumn } from "@workspace/db";
 import { z } from "zod/v4";
 
 type RouteContext = {
@@ -17,8 +17,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
     title: z.string().min(1),
     artist: z.string().min(1),
     durationMs: z.number().int().positive(),
+    bpm: z.number().int().min(30).max(300).nullable().optional(),
+    deezerId: z.string().optional(),
     spotifyId: z.string().optional(),
-    albumArt: z.string().optional(),
+    albumArt: z.string().nullable().optional(),
   });
 
   const parsed = schema.safeParse(await request.json().catch(() => null));
@@ -27,6 +29,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   try {
+    await ensureSetlistSongsBpmColumn();
+
     const maxPosition = await db.setlistSong.aggregate({
       where: { setlistId },
       _max: { position: true },
@@ -39,6 +43,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
         title: parsed.data.title,
         artist: parsed.data.artist,
         durationMs: parsed.data.durationMs,
+        bpm: parsed.data.bpm ?? null,
+        deezerId: parsed.data.deezerId ?? null,
         spotifyId: parsed.data.spotifyId ?? null,
         albumArt: parsed.data.albumArt ?? null,
       },
@@ -46,6 +52,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json(song, { status: 201 });
   } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

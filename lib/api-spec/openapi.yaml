@@ -11,8 +11,8 @@ tags:
     description: Health operations
   - name: setlists
     description: Setlist management
-  - name: spotify
-    description: Spotify track search
+  - name: deezer
+    description: Deezer track search
   - name: lyrics
     description: Synced lyrics search and storage
 paths:
@@ -300,11 +300,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
-  /spotify/search:
+  /deezer/search:
     get:
-      operationId: searchSpotifyTracks
-      tags: [spotify]
-      summary: Search for tracks on Spotify
+      operationId: searchDeezerTracks
+      tags: [deezer]
+      summary: Search for tracks on Deezer
       parameters:
         - name: q
           in: query
@@ -320,9 +320,9 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/SpotifyTrack"
+                  $ref: "#/components/schemas/DeezerTrack"
         "500":
-          description: Spotify API error
+          description: Deezer API error
           content:
             application/json:
               schema:
@@ -410,10 +410,18 @@ components:
           type: string
         durationMs:
           type: integer
+        bpm:
+          type:
+            - integer
+            - "null"
+        deezerId:
+          type: string
         spotifyId:
           type: string
         albumArt:
-          type: string
+          type:
+            - string
+            - "null"
       required:
         - id
         - setlistId
@@ -447,10 +455,18 @@ components:
           type: string
         durationMs:
           type: integer
+        bpm:
+          type:
+            - integer
+            - "null"
+        deezerId:
+          type: string
         spotifyId:
           type: string
         albumArt:
-          type: string
+          type:
+            - string
+            - "null"
       required:
         - title
         - artist
@@ -467,7 +483,7 @@ components:
       required:
         - songIds
 
-    SpotifyTrack:
+    DeezerTrack:
       type: object
       properties:
         id:
@@ -478,8 +494,14 @@ components:
           type: string
         durationMs:
           type: integer
+        bpm:
+          type:
+            - integer
+            - "null"
         albumArt:
-          type: string
+          type:
+            - string
+            - "null"
         album:
           type: string
       required:
@@ -618,7 +640,3 @@ components:
         - plainLyrics
         - syncedLyrics
         - lines
-
-
-
-

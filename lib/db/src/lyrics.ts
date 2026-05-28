@@ -95,7 +95,10 @@ export function parseSyncedLyrics(rawLyrics: string): LyricLine[] {
       continue;
     }
 
-    const text = rawLine.replace(timestampPattern, "").replace(/\s+/g, " ").trim();
+    const text = rawLine
+      .replace(timestampPattern, "")
+      .replace(/\s+/g, " ")
+      .trim();
     if (!text) {
       continue;
     }
@@ -104,7 +107,10 @@ export function parseSyncedLyrics(rawLyrics: string): LyricLine[] {
       const minutes = Number.parseInt(match[1] ?? "0", 10);
       const seconds = Number.parseInt(match[2] ?? "0", 10);
       const fraction = match[3] ?? "0";
-      const fractionMs = Number.parseInt(fraction.padEnd(3, "0").slice(0, 3), 10);
+      const fractionMs = Number.parseInt(
+        fraction.padEnd(3, "0").slice(0, 3),
+        10,
+      );
       lines.push({
         text,
         startMs: minutes * 60_000 + seconds * 1_000 + fractionMs,
@@ -131,12 +137,25 @@ export function formatSyncedLyrics(lines: LyricLine[]): string {
       const centiseconds = Math.floor((totalMs % 1_000) / 10);
       return `[${minutes.toString().padStart(2, "0")}:${seconds
         .toString()
-        .padStart(2, "0")}.${centiseconds.toString().padStart(2, "0")}] ${line.text.trim()}`;
+        .padStart(
+          2,
+          "0",
+        )}.${centiseconds.toString().padStart(2, "0")}] ${line.text.trim()}`;
     })
     .join("\n");
 }
 
+export async function ensureSetlistSongsBpmColumn() {
+  await db.$executeRawUnsafe(`
+    ALTER TABLE setlist_songs
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS deezer_id TEXT
+  `);
+}
+
 export async function ensureSongLyricsTable() {
+  await ensureSetlistSongsBpmColumn();
+
   await db.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS setlist_song_lyrics (
       id SERIAL PRIMARY KEY,
@@ -165,6 +184,8 @@ export async function ensureSongLyricsTable() {
 }
 
 export async function assertSongInSetlist(setlistId: number, songId: number) {
+  await ensureSetlistSongsBpmColumn();
+
   const song = await db.setlistSong.findFirst({
     where: { id: songId, setlistId },
   });
@@ -279,7 +300,10 @@ export async function fetchLrclibLyrics(params: {
   });
 
   if (params.durationMs && params.durationMs > 0) {
-    searchParams.set("duration", Math.round(params.durationMs / 1_000).toString());
+    searchParams.set(
+      "duration",
+      Math.round(params.durationMs / 1_000).toString(),
+    );
   }
 
   const response = await fetch(`https://lrclib.net/api/get?${searchParams}`, {
@@ -301,7 +325,9 @@ export async function fetchLrclibLyrics(params: {
   return normalizeLrclibResponse(payload);
 }
 
-function normalizeLrclibResponse(payload: LrclibResponse): LrclibLyricsResult | null {
+function normalizeLrclibResponse(
+  payload: LrclibResponse,
+): LrclibLyricsResult | null {
   const syncedLyrics = payload.syncedLyrics?.trim() || null;
   const plainLyrics = payload.plainLyrics?.trim() || "";
   const lines = syncedLyrics

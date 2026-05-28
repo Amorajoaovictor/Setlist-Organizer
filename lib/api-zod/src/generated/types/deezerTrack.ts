@@ -6,11 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SpotifyTrack {
+export interface DeezerTrack {
   id: string;
   title: string;
   artist: string;
   durationMs: number;
-  albumArt?: string;
+  /** @nullable */
+  bpm?: number | null;
+  /** @nullable */
+  albumArt?: string | null;
   album?: string;
 }

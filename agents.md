@@ -4,16 +4,16 @@ Este documento consolida o escopo funcional do MVP e a arquitetura atual do repo
 
 ## Visao Geral
 
-SetlistOS e uma aplicacao web para bandas criarem setlists, buscarem musicas no Spotify, adicionarem faixas, reordenarem musicas por drag-and-drop e acompanharem a duracao total do show.
+SetlistOS e uma aplicacao web para bandas criarem setlists, buscarem musicas no Deezer, adicionarem faixas, reordenarem musicas por drag-and-drop e acompanharem a duracao total do show.
 
-O MVP tambem define um caminho de produto alem do que ja esta implementado: autenticacao, letras, modo apresentacao, sincronizacao manual de letras, metronomo e persistencia de letras. Hoje a aplicacao principal cobre setlists, musicas, busca Spotify, ordenacao e duracao total.
+O MVP tambem define um caminho de produto alem do que ja esta implementado: autenticacao, letras, modo apresentacao, sincronizacao manual de letras, metronomo e persistencia de letras. Hoje a aplicacao principal cobre setlists, musicas, busca Deezer, ordenacao e duracao total.
 
 ## Arquitetura do Monorepo
 
 O repositorio e um workspace pnpm com TypeScript.
 
 - `artifacts/setlist-app`: aplicacao principal em Next.js App Router. Serve UI e API routes em `/api`.
-- `artifacts/api-server`: servidor Express 5 legado com rotas equivalentes de setlists e Spotify. Nao e o caminho principal.
+- `artifacts/api-server`: servidor Express 5 legado com rotas equivalentes de setlists e Deezer. Nao e o caminho principal.
 - `lib/db`: Prisma schema e cliente compartilhado.
 - `lib/api-spec`: contrato OpenAPI usado por Orval.
 - `lib/api-client-react`: cliente gerado com hooks React Query.
@@ -30,7 +30,7 @@ Stack atual:
 - Zod
 - OpenAPI + Orval
 - `@hello-pangea/dnd` para drag-and-drop
-- Spotify Client Credentials flow
+- Deezer public search API
 
 ## Modulos Principais
 
@@ -39,8 +39,8 @@ Stack atual:
 - `src/app/page.tsx`: entrada da lista de setlists.
 - `src/app/setlists/[id]/page.tsx`: detalhe de uma setlist.
 - `src/views/Setlists.tsx`: listagem, criacao e exclusao de setlists.
-- `src/views/SetlistDetail.tsx`: edicao de nome, lista de musicas, drag-and-drop, remocao e painel de busca Spotify.
-- `src/components/SpotifySearch.tsx`: busca debounced no Spotify e acao de adicionar faixa.
+- `src/views/SetlistDetail.tsx`: edicao de nome, lista de musicas, drag-and-drop, remocao e painel de busca Deezer.
+- `src/components/DeezerSearch.tsx`: busca debounced no Deezer e acao de adicionar faixa.
 - `src/components/*`: componentes locais de UI, alem de muitos componentes base em `src/components/ui`.
 
 ### API Next Route Handlers
@@ -56,23 +56,18 @@ As rotas principais vivem em `artifacts/setlist-app/src/app/api`.
 - `POST /api/setlists/:id/songs`: adiciona musica na proxima posicao.
 - `DELETE /api/setlists/:id/songs/:songId`: remove musica.
 - `PUT /api/setlists/:id/songs/reorder`: atualiza `position` conforme array de IDs.
-- `GET /api/spotify/search?q=...`: busca ate 10 faixas no Spotify.
+- `GET /api/deezer/search?q=...`: busca ate 10 faixas no Deezer.
 
-### Integracao Spotify
+### Integracao Deezer
 
-`artifacts/setlist-app/src/server/spotify.ts` usa Client Credentials com:
-
-- `SPOTIFY_CLIENT_ID`
-- `SPOTIFY_CLIENT_SECRET`
-
-O token e cacheado em memoria ate perto do vencimento. A busca retorna `id`, `title`, `artist`, `durationMs`, `albumArt` e `album`.
+`artifacts/setlist-app/src/server/deezer.ts` usa a API publica do Deezer, sem credenciais. A busca retorna `id`, `title`, `artist`, `durationMs`, `bpm`, `albumArt` e `album`.
 
 ### Banco de Dados
 
 Schema atual em `lib/db/prisma/schema.prisma`:
 
 - `Setlist`: `id`, `name`, `createdAt`, relacao `songs`.
-- `SetlistSong`: `id`, `setlistId`, `position`, `title`, `artist`, `durationMs`, `spotifyId`, `albumArt`.
+- `SetlistSong`: `id`, `setlistId`, `position`, `title`, `artist`, `durationMs`, `bpm`, `deezerId`, `spotifyId`, `albumArt`.
 
 Nao ha ainda modelos de usuario, autenticacao, letra, sincronizacao, apresentacao ou metronomo.
 
@@ -86,8 +81,8 @@ Contratos atuais:
 
 - `Setlist`: `id`, `name`, `createdAt`, `totalDurationMs`, `songCount`.
 - `SetlistWithSongs`: `id`, `name`, `createdAt`, `songs`.
-- `SetlistSong`: `id`, `setlistId`, `position`, `title`, `artist`, `durationMs`, `spotifyId`, `albumArt`.
-- `SpotifyTrack`: `id`, `title`, `artist`, `durationMs`, `albumArt`, `album`.
+- `SetlistSong`: `id`, `setlistId`, `position`, `title`, `artist`, `durationMs`, `bpm`, `deezerId`, `spotifyId`, `albumArt`.
+- `DeezerTrack`: `id`, `title`, `artist`, `durationMs`, `bpm`, `albumArt`, `album`.
 
 Depois de mudar `openapi.yaml`, gere novamente os pacotes de cliente/schemas conforme os scripts do workspace. Nao edite arquivos gerados manualmente.
 
@@ -99,8 +94,8 @@ Depois de mudar `openapi.yaml`, gere novamente os pacotes de cliente/schemas con
 - Listar setlists.
 - Excluir setlists.
 - Renomear setlist.
-- Buscar musicas no Spotify.
-- Importar titulo, artista, duracao, Spotify ID e capa do album.
+- Buscar musicas no Deezer.
+- Importar titulo, artista, duracao, BPM, Deezer ID e capa do album.
 - Adicionar musica a setlist.
 - Remover musica.
 - Reordenar musicas por drag-and-drop.
@@ -113,7 +108,7 @@ Depois de mudar `openapi.yaml`, gere novamente os pacotes de cliente/schemas con
 - Autenticacao e usuario.
 - Descricao de setlist.
 - Artista opcional para musica manual; hoje `artist` e obrigatorio no contrato de adicionar musica.
-- Insercao manual de musica fora do Spotify.
+- Insercao manual de musica fora do Deezer.
 - Letras automaticas e manuais.
 - Persistencia de letras.
 - Letras sincronizadas.
@@ -244,7 +239,7 @@ O sistema deve executar uma contagem inicial, por exemplo 1, 2, 3, 4, antes do i
 
 #### RF-022 - Buscar musicas via API externa
 
-O sistema deve buscar musicas utilizando integracao com API externa. A integracao atual e Spotify.
+O sistema deve buscar musicas utilizando integracao com API externa. A integracao atual e Deezer.
 
 #### RF-023 - Importar dados da musica
 
@@ -253,7 +248,7 @@ O sistema deve preencher automaticamente:
 - Nome
 - Artista
 
-Hoje tambem importa duracao, capa do album e Spotify ID.
+Hoje tambem importa duracao, BPM, capa do album e Deezer ID.
 
 ### 9. Persistencia
 
@@ -344,7 +339,7 @@ Atualize `lib/api-spec/openapi.yaml` antes de usar hooks gerados no frontend.
 O MVP deve focar em:
 
 - Criacao e gestao de setlists.
-- Busca e importacao de musicas via Spotify.
+- Busca e importacao de musicas via Deezer.
 - Letras basicas.
 - Busca automatica de letras via LRCLIB.
 - Fallback manual para letra e sincronizacao.
@@ -371,6 +366,6 @@ O MVP deve focar em:
 - Mantenha rotas de API sob `/api` para compatibilidade com o servidor Next.
 - Ao implementar Letras, mantenha fallback manual como requisito de primeira classe, nao como detalhe secundario.
 - Nao crie armazenamento, upload ou endpoint para arquivos de audio; preview de audio para sincronizacao manual e responsabilidade exclusiva do client.
-- Evite acoplar letras exclusivamente ao Spotify ID, porque musicas podem ser inseridas manualmente ou vir de outras fontes.
+- Evite acoplar letras exclusivamente ao Deezer ID ou a qualquer ID de provedor, porque musicas podem ser inseridas manualmente ou vir de outras fontes.
 - Antes de mexer em UI, verifique os componentes e estilos existentes para manter consistencia visual.
 - Nao remova nem reverta mudancas de outros agentes sem instrucao explicita.

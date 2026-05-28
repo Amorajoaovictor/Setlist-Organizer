@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { searchTracks } from "../lib/spotify";
+import { searchTracks } from "../lib/deezer";
 
 const router: IRouter = Router();
 
@@ -15,8 +15,8 @@ router.get("/search", async (req, res) => {
     const tracks = await searchTracks(q);
     res.json(tracks);
   } catch (err) {
-    req.log.error({ err }, "Spotify search failed");
-    res.status(500).json({ error: "Failed to search Spotify" });
+    req.log.error({ err }, "Deezer search failed");
+    res.status(500).json({ error: "Failed to search Deezer" });
   }
 });
 

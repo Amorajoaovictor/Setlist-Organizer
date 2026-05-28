@@ -1,0 +1,245 @@
+
+> @workspace/setlist-app@0.0.0 dev C:\Users\amora\Setlist-Organizer\artifacts\setlist-app
+> next dev -H 0.0.0.0
+
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://0.0.0.0:3000
+- Environments: .env.local
+✓ Ready in 841ms
+
+ GET /api/deezer/search?q=queen 200 in 1705ms (next.js: 666ms, application-code: 1040ms)
+ GET /api/healthz 200 in 1021ms (next.js: 998ms, application-code: 23ms)
+○ Compiling / ...
+ GET / 200 in 7.6s (next.js: 6.9s, application-code: 657ms)
+ GET /api/auth/session 200 in 3.3s (next.js: 3.3s, application-code: 30ms)
+ GET /api/auth/session 200 in 42ms (next.js: 25ms, application-code: 18ms)
+prisma:query 
+    ALTER TABLE setlist_songs
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS deezer_id TEXT
+  
+prisma:query SELECT "public"."setlists"."id", "public"."setlists"."name", "public"."setlists"."created_at" FROM "public"."setlists" WHERE 1=1 ORDER BY "public"."setlists"."created_at" ASC OFFSET $1
+prisma:query SELECT "public"."setlist_songs"."id", "public"."setlist_songs"."setlist_id", "public"."setlist_songs"."position", "public"."setlist_songs"."title", "public"."setlist_songs"."artist", "public"."setlist_songs"."duration_ms", "public"."setlist_songs"."bpm", "public"."setlist_songs"."deezer_id", "public"."setlist_songs"."spotify_id", "public"."setlist_songs"."album_art" FROM "public"."setlist_songs" WHERE "public"."setlist_songs"."setlist_id" IN ($1,$2) OFFSET $3
+ GET /api/setlists 200 in 4.6s (next.js: 1211ms, application-code: 3.4s)
+ GET /setlists/1 200 in 2.1s (next.js: 2.1s, application-code: 77ms)
+prisma:query 
+    ALTER TABLE setlist_songs
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS deezer_id TEXT
+  
+prisma:query SELECT "public"."setlists"."id", "public"."setlists"."name", "public"."setlists"."created_at" FROM "public"."setlists" WHERE ("public"."setlists"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."setlist_songs"."id", "public"."setlist_songs"."setlist_id", "public"."setlist_songs"."position", "public"."setlist_songs"."title", "public"."setlist_songs"."artist", "public"."setlist_songs"."duration_ms", "public"."setlist_songs"."bpm", "public"."setlist_songs"."deezer_id", "public"."setlist_songs"."spotify_id", "public"."setlist_songs"."album_art" FROM "public"."setlist_songs" WHERE "public"."setlist_songs"."setlist_id" IN ($1) ORDER BY "public"."setlist_songs"."position" ASC OFFSET $2
+ GET /api/setlists/1 200 in 2.1s (next.js: 1558ms, application-code: 553ms)
+ GET /api/deezer/search?q=nana 200 in 720ms (next.js: 5ms, application-code: 714ms)
+ GET /api/deezer/search?q=nanana 200 in 799ms (next.js: 8ms, application-code: 791ms)
+prisma:query SELECT 1
+prisma:query 
+    ALTER TABLE setlist_songs
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS deezer_id TEXT
+  
+prisma:query SELECT MAX("position") AS "_max$position" FROM (SELECT "public"."setlist_songs"."position" FROM "public"."setlist_songs" WHERE "public"."setlist_songs"."setlist_id" = $1 OFFSET $2) AS "sub"
+prisma:query INSERT INTO "public"."setlist_songs" ("setlist_id","position","title","artist","duration_ms","bpm","deezer_id","spotify_id","album_art") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING "public"."setlist_songs"."id", "public"."setlist_songs"."setlist_id", "public"."setlist_songs"."position", "public"."setlist_songs"."title", "public"."setlist_songs"."artist", "public"."setlist_songs"."duration_ms", "public"."setlist_songs"."bpm", "public"."setlist_songs"."deezer_id", "public"."setlist_songs"."spotify_id", "public"."setlist_songs"."album_art"
+ POST /api/setlists/1/songs 201 in 2.0s (next.js: 1277ms, application-code: 766ms)
+prisma:query 
+    ALTER TABLE setlist_songs
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS deezer_id TEXT
+  
+prisma:query SELECT "public"."setlists"."id", "public"."setlists"."name", "public"."setlists"."created_at" FROM "public"."setlists" WHERE ("public"."setlists"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."setlist_songs"."id", "public"."setlist_songs"."setlist_id", "public"."setlist_songs"."position", "public"."setlist_songs"."title", "public"."setlist_songs"."artist", "public"."setlist_songs"."duration_ms", "public"."setlist_songs"."bpm", "public"."setlist_songs"."deezer_id", "public"."setlist_songs"."spotify_id", "public"."setlist_songs"."album_art" FROM "public"."setlist_songs" WHERE "public"."setlist_songs"."setlist_id" IN ($1) ORDER BY "public"."setlist_songs"."position" ASC OFFSET $2
+ GET /api/setlists/1 200 in 320ms (next.js: 15ms, application-code: 305ms)
+prisma:query 
+    ALTER TABLE setlist_songs
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS deezer_id TEXT
+  
+prisma:query SELECT "public"."setlist_songs"."id", "public"."setlist_songs"."setlist_id", "public"."setlist_songs"."position", "public"."setlist_songs"."title", "public"."setlist_songs"."artist", "public"."setlist_songs"."duration_ms", "public"."setlist_songs"."bpm", "public"."setlist_songs"."deezer_id", "public"."setlist_songs"."spotify_id", "public"."setlist_songs"."album_art" FROM "public"."setlist_songs" WHERE ("public"."setlist_songs"."id" = $1 AND "public"."setlist_songs"."setlist_id" = $2) LIMIT $3 OFFSET $4
+ POST /api/setlists/1/songs/9/lyrics/search 200 in 4.4s (next.js: 1435ms, application-code: 3.0s)
+prisma:query 
+    ALTER TABLE setlist_songs
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS deezer_id TEXT
+  
+prisma:query SELECT "public"."setlist_songs"."id", "public"."setlist_songs"."setlist_id", "public"."setlist_songs"."position", "public"."setlist_songs"."title", "public"."setlist_songs"."artist", "public"."setlist_songs"."duration_ms", "public"."setlist_songs"."bpm", "public"."setlist_songs"."deezer_id", "public"."setlist_songs"."spotify_id", "public"."setlist_songs"."album_art" FROM "public"."setlist_songs" WHERE ("public"."setlist_songs"."id" = $1 AND "public"."setlist_songs"."setlist_id" = $2) LIMIT $3 OFFSET $4
+prisma:query 
+    ALTER TABLE setlist_songs
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS deezer_id TEXT
+  
+prisma:query 
+    CREATE TABLE IF NOT EXISTS setlist_song_lyrics (
+      id SERIAL PRIMARY KEY,
+      song_id INTEGER NOT NULL UNIQUE REFERENCES setlist_songs(id) ON DELETE CASCADE,
+      source TEXT NOT NULL DEFAULT 'manual',
+      lrclib_id INTEGER,
+      plain_lyrics TEXT NOT NULL DEFAULT '',
+      synced_lyrics TEXT,
+      lines JSONB NOT NULL DEFAULT '[]'::jsonb,
+      bpm INTEGER,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  
+prisma:query 
+    ALTER TABLE setlist_song_lyrics
+      ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'manual',
+      ADD COLUMN IF NOT EXISTS lrclib_id INTEGER,
+      ADD COLUMN IF NOT EXISTS plain_lyrics TEXT NOT NULL DEFAULT '',
+      ADD COLUMN IF NOT EXISTS synced_lyrics TEXT,
+      ADD COLUMN IF NOT EXISTS lines JSONB NOT NULL DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  
+prisma:query 
+      INSERT INTO setlist_song_lyrics (
+        song_id,
+        source,
+        lrclib_id,
+        plain_lyrics,
+        synced_lyrics,
+        lines,
+        bpm,
+        updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, now())
+      ON CONFLICT (song_id) DO UPDATE SET
+        source = EXCLUDED.source,
+        lrclib_id = EXCLUDED.lrclib_id,
+        plain_lyrics = EXCLUDED.plain_lyrics,
+        synced_lyrics = EXCLUDED.synced_lyrics,
+        lines = EXCLUDED.lines,
+        bpm = EXCLUDED.bpm,
+        updated_at = now()
+      RETURNING
+        id,
+        song_id AS "songId",
+        source,
+        lrclib_id AS "lrclibId",
+        plain_lyrics AS "plainLyrics",
+        synced_lyrics AS "syncedLyrics",
+        lines,
+        bpm,
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
+    
+ PUT /api/setlists/1/songs/9/lyrics 200 in 2.5s (next.js: 1524ms, application-code: 956ms)
+ GET /setlists/1/songs/9/lyrics 200 in 2.1s (next.js: 1981ms, application-code: 96ms)
+prisma:query 
+    ALTER TABLE setlist_songs
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS deezer_id TEXT
+  
+prisma:query SELECT "public"."setlist_songs"."id", "public"."setlist_songs"."setlist_id", "public"."setlist_songs"."position", "public"."setlist_songs"."title", "public"."setlist_songs"."artist", "public"."setlist_songs"."duration_ms", "public"."setlist_songs"."bpm", "public"."setlist_songs"."deezer_id", "public"."setlist_songs"."spotify_id", "public"."setlist_songs"."album_art" FROM "public"."setlist_songs" WHERE ("public"."setlist_songs"."id" = $1 AND "public"."setlist_songs"."setlist_id" = $2) LIMIT $3 OFFSET $4
+prisma:query 
+    ALTER TABLE setlist_songs
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS deezer_id TEXT
+  
+prisma:query 
+    CREATE TABLE IF NOT EXISTS setlist_song_lyrics (
+      id SERIAL PRIMARY KEY,
+      song_id INTEGER NOT NULL UNIQUE REFERENCES setlist_songs(id) ON DELETE CASCADE,
+      source TEXT NOT NULL DEFAULT 'manual',
+      lrclib_id INTEGER,
+      plain_lyrics TEXT NOT NULL DEFAULT '',
+      synced_lyrics TEXT,
+      lines JSONB NOT NULL DEFAULT '[]'::jsonb,
+      bpm INTEGER,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  
+prisma:query 
+    ALTER TABLE setlist_song_lyrics
+      ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'manual',
+      ADD COLUMN IF NOT EXISTS lrclib_id INTEGER,
+      ADD COLUMN IF NOT EXISTS plain_lyrics TEXT NOT NULL DEFAULT '',
+      ADD COLUMN IF NOT EXISTS synced_lyrics TEXT,
+      ADD COLUMN IF NOT EXISTS lines JSONB NOT NULL DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  
+prisma:query 
+      SELECT
+        id,
+        song_id AS "songId",
+        source,
+        lrclib_id AS "lrclibId",
+        plain_lyrics AS "plainLyrics",
+        synced_lyrics AS "syncedLyrics",
+        lines,
+        bpm,
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
+      FROM setlist_song_lyrics
+      WHERE song_id = $1
+      LIMIT 1
+    
+ GET /api/setlists/1/songs/9/lyrics 200 in 762ms (next.js: 22ms, application-code: 739ms)
+prisma:query 
+    ALTER TABLE setlist_songs
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS deezer_id TEXT
+  
+prisma:query SELECT "public"."setlist_songs"."id", "public"."setlist_songs"."setlist_id", "public"."setlist_songs"."position", "public"."setlist_songs"."title", "public"."setlist_songs"."artist", "public"."setlist_songs"."duration_ms", "public"."setlist_songs"."bpm", "public"."setlist_songs"."deezer_id", "public"."setlist_songs"."spotify_id", "public"."setlist_songs"."album_art" FROM "public"."setlist_songs" WHERE ("public"."setlist_songs"."id" = $1 AND "public"."setlist_songs"."setlist_id" = $2) LIMIT $3 OFFSET $4
+prisma:query 
+    ALTER TABLE setlist_songs
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS deezer_id TEXT
+  
+prisma:query 
+    ALTER TABLE setlist_songs
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS deezer_id TEXT
+  
+prisma:query 
+    CREATE TABLE IF NOT EXISTS setlist_song_lyrics (
+      id SERIAL PRIMARY KEY,
+      song_id INTEGER NOT NULL UNIQUE REFERENCES setlist_songs(id) ON DELETE CASCADE,
+      source TEXT NOT NULL DEFAULT 'manual',
+      lrclib_id INTEGER,
+      plain_lyrics TEXT NOT NULL DEFAULT '',
+      synced_lyrics TEXT,
+      lines JSONB NOT NULL DEFAULT '[]'::jsonb,
+      bpm INTEGER,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  
+prisma:query 
+    ALTER TABLE setlist_song_lyrics
+      ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'manual',
+      ADD COLUMN IF NOT EXISTS lrclib_id INTEGER,
+      ADD COLUMN IF NOT EXISTS plain_lyrics TEXT NOT NULL DEFAULT '',
+      ADD COLUMN IF NOT EXISTS synced_lyrics TEXT,
+      ADD COLUMN IF NOT EXISTS lines JSONB NOT NULL DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS bpm INTEGER,
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  
+prisma:query SELECT "public"."setlists"."id", "public"."setlists"."name", "public"."setlists"."created_at" FROM "public"."setlists" WHERE ("public"."setlists"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query 
+      SELECT
+        id,
+        song_id AS "songId",
+        source,
+        lrclib_id AS "lrclibId",
+        plain_lyrics AS "plainLyrics",
+        synced_lyrics AS "syncedLyrics",
+        lines,
+        bpm,
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
+      FROM setlist_song_lyrics
+      WHERE song_id = $1
+      LIMIT 1
+    
+ GET /api/setlists/1/songs/9/lyrics 200 in 639ms (next.js: 6ms, application-code: 633ms)
+prisma:query SELECT "public"."setlist_songs"."id", "public"."setlist_songs"."setlist_id", "public"."setlist_songs"."position", "public"."setlist_songs"."title", "public"."setlist_songs"."artist", "public"."setlist_songs"."duration_ms", "public"."setlist_songs"."bpm", "public"."setlist_songs"."deezer_id", "public"."setlist_songs"."spotify_id", "public"."setlist_songs"."album_art" FROM "public"."setlist_songs" WHERE "public"."setlist_songs"."setlist_id" IN ($1) ORDER BY "public"."setlist_songs"."position" ASC OFFSET $2
+ GET /api/setlists/1 200 in 1454ms (next.js: 16ms, application-code: 1438ms)
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }

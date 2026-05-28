@@ -1,7 +1,18 @@
+ "use client";
+
 import Link from "next/link";
 import { AudioWaveform } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 
 export function Header() {
+  const [isMounted, setIsMounted] = useState(false);
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/5 bg-background/60 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -14,11 +25,31 @@ export function Header() {
               Setlist<span className="text-primary group-hover:text-foreground transition-colors">OS</span>
             </span>
           </Link>
-          <nav className="flex items-center gap-6">
-            <Link href="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              My Setlists
-            </Link>
-          </nav>
+          {isMounted ? (
+            <nav className="flex items-center gap-6">
+              <Link href="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                My Setlists
+              </Link>
+              {status === "authenticated" ? (
+                <div className="flex items-center gap-3">
+                  <span className="max-w-40 truncate text-sm font-medium text-muted-foreground">
+                    {session.user?.name ?? session.user?.email ?? "Logado"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => signOut({ callbackUrl: "/login" })}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Sair
+                  </button>
+                </div>
+              ) : (
+                <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  Login
+                </Link>
+              )}
+            </nav>
+          ) : null}
         </div>
       </div>
     </header>

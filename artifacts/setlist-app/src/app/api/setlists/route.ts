@@ -1,9 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { db } from "@workspace/db";
+import { db, ensureSetlistSongsBpmColumn } from "@workspace/db";
 import { z } from "zod/v4";
 
 export async function GET() {
   try {
+    await ensureSetlistSongsBpmColumn();
+
     const rows = await db.setlist.findMany({
       include: { songs: true },
       orderBy: { createdAt: "asc" },
@@ -22,7 +24,10 @@ export async function GET() {
       })),
     );
   } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -47,6 +52,9 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

@@ -72,6 +72,7 @@
     "@workspace/api-client-react": "workspace:*",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
-    "next": "^16.0.0"
+    "next": "^16.0.0",
+    "next-auth": "5.0.0-beta.31"
   }
 }

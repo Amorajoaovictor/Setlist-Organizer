@@ -45,7 +45,9 @@ export function SetlistPresentationMode({
 }) {
   const router = useRouter();
   const audioContextRef = useRef<AudioContext | null>(null);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const countInTimeoutRef = useRef<number | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [countInValue, setCountInValue] = useState<number | null>(4);
   const [activeSongIndex, setActiveSongIndex] = useState(0);
   const [activeLineIndex, setActiveLineIndex] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -71,6 +73,7 @@ export function SetlistPresentationMode({
   );
   const playbackProgress =
     songDurationMs > 0 ? Math.min(100, (elapsedMs / songDurationMs) * 100) : 0;
+  const isCountingIn = countInValue !== null;
 
   useEffect(() => {
     let cancelled = false;
@@ -127,6 +130,31 @@ export function SetlistPresentationMode({
   }, [setlistId, songs]);
 
   useEffect(() => {
+    if (countInValue === null) {
+      return;
+    }
+
+    if (countInValue <= 0) {
+      countInTimeoutRef.current = window.setTimeout(() => {
+        countInTimeoutRef.current = null;
+        setCountInValue(null);
+        setIsPlaying(true);
+      }, 450);
+      return () => clearCountInTimeout();
+    }
+
+    playClick(countInValue === 4);
+    countInTimeoutRef.current = window.setTimeout(() => {
+      countInTimeoutRef.current = null;
+      setCountInValue((current) =>
+        current === null ? null : Math.max(current - 1, 0),
+      );
+    }, 1_000);
+
+    return () => clearCountInTimeout();
+  }, [countInValue]);
+
+  useEffect(() => {
     if (!isPlaying) {
       return;
     }
@@ -176,7 +204,7 @@ export function SetlistPresentationMode({
     }
 
     if (activeSongIndex < songs.length - 1) {
-      goToSong(activeSongIndex + 1);
+      goToSong(activeSongIndex + 1, { startCountIn: true });
       return;
     }
 
@@ -198,7 +226,7 @@ export function SetlistPresentationMode({
       }
       if (event.key === " ") {
         event.preventDefault();
-        setIsPlaying((current) => !current);
+        togglePlayback();
       }
       if (event.key === "ArrowRight") {
         goToSong(activeSongIndex + 1);
@@ -210,17 +238,60 @@ export function SetlistPresentationMode({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeSongIndex, router, setlistId]);
+  }, [activeSongIndex, isCountingIn, isPlaying, router, setlistId]);
 
-  function goToSong(nextIndex: number) {
+  function clearCountInTimeout() {
+    if (countInTimeoutRef.current !== null) {
+      window.clearTimeout(countInTimeoutRef.current);
+      countInTimeoutRef.current = null;
+    }
+  }
+
+  function startCountIn() {
+    clearCountInTimeout();
+    setIsPlaying(false);
+    setCountInValue(4);
+    setBeat(1);
+  }
+
+  function pausePlayback() {
+    clearCountInTimeout();
+    setCountInValue(null);
+    setIsPlaying(false);
+  }
+
+  function togglePlayback() {
+    if (isPlaying || isCountingIn) {
+      pausePlayback();
+      return;
+    }
+
+    startCountIn();
+  }
+
+  function goToSong(
+    nextIndex: number,
+    options: { startCountIn?: boolean } = {},
+  ) {
     const boundedIndex = Math.min(
       Math.max(nextIndex, 0),
       Math.max(songs.length - 1, 0),
     );
+    const shouldStartCountIn =
+      options.startCountIn ?? (isPlaying || isCountingIn);
+
     setActiveSongIndex(boundedIndex);
     setActiveLineIndex(0);
     setElapsedMs(0);
     setBeat(1);
+    setIsPlaying(false);
+
+    if (shouldStartCountIn) {
+      startCountIn();
+    } else {
+      clearCountInTimeout();
+      setCountInValue(null);
+    }
   }
 
   function moveLine(direction: -1 | 1) {
@@ -279,6 +350,53 @@ export function SetlistPresentationMode({
     <div className="relative flex h-screen min-h-screen flex-col overflow-hidden bg-[#020407] text-white">
       <div className="absolute inset-0 bg-[linear-gradient(rgba(34,211,238,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(236,72,153,0.035)_1px,transparent_1px)] bg-[size:72px_72px] opacity-70" />
       <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-cyan-400/10 to-transparent" />
+
+      {(isCountingIn || !isPlaying) && (
+        <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center overflow-hidden bg-black/55 px-6 text-center backdrop-blur-[1px]">
+          <div
+            key={isCountingIn ? countInValue : "paused"}
+            className={cn(
+              "relative flex aspect-square w-[min(78vw,28rem)] items-center justify-center overflow-hidden rounded-full border bg-zinc-950/80 shadow-[0_0_90px_rgba(34,211,238,0.2)]",
+              isCountingIn
+                ? "border-cyan-100/60 text-cyan-50"
+                : "border-fuchsia-200/45 text-fuchsia-50",
+            )}
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:18px_18px] opacity-35" />
+            <div className="absolute inset-[7%] rounded-full border border-white/55" />
+            <div className="absolute inset-[18%] rounded-full border border-white/25" />
+            <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-white/35" />
+            <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-white/35" />
+            {isCountingIn && (
+              <div className="absolute left-1/2 top-1/2 h-[150%] w-[150%] origin-top-left -translate-x-px -translate-y-px rotate-[-42deg] bg-[conic-gradient(from_0deg,rgba(34,211,238,0.34)_0deg,rgba(34,211,238,0.18)_38deg,transparent_39deg)]" />
+            )}
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),transparent_20%,transparent_80%,rgba(0,0,0,0.35))]" />
+
+            <div className="relative z-10 flex flex-col items-center">
+              <p className="text-xs font-bold uppercase tracking-[0.55em] text-white/55 sm:text-sm">
+                {isCountingIn ? "Entrada" : "Pausado"}
+              </p>
+              <p
+                className={cn(
+                  "mt-4 flex h-[0.9em] min-w-[1.45em] items-center justify-center font-black leading-none tracking-normal text-cyan-100 [font-variant-numeric:tabular-nums] [text-shadow:0_0_28px_rgba(34,211,238,0.55)]",
+                  countInValue === 0
+                    ? "text-[clamp(3.25rem,12vw,7rem)]"
+                    : "text-[clamp(5.5rem,22vw,13rem)]",
+                )}
+              >
+                {isCountingIn
+                  ? countInValue === 0
+                    ? "Vai"
+                    : countInValue
+                  : "II"}
+              </p>
+              <p className="mt-2 max-w-64 text-xs font-semibold uppercase tracking-[0.25em] text-white/45 sm:text-sm">
+                {isCountingIn ? "Stand by" : "Play para voltar"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <header className="relative z-10 flex h-20 flex-shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-black/60 px-4 backdrop-blur-xl sm:px-8">
         <Link
@@ -357,13 +475,15 @@ export function SetlistPresentationMode({
             </button>
             <button
               type="button"
-              onClick={() => setIsPlaying((current) => !current)}
+              onClick={togglePlayback}
               className="flex h-12 w-12 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/10 text-cyan-200 transition hover:bg-cyan-300/20"
               aria-label={
-                isPlaying ? "Pausar apresentacao" : "Tocar apresentacao"
+                isPlaying || isCountingIn
+                  ? "Pausar apresentacao"
+                  : "Tocar apresentacao"
               }
             >
-              {isPlaying ? (
+              {isPlaying || isCountingIn ? (
                 <Pause className="h-5 w-5" />
               ) : (
                 <Play className="h-5 w-5" />
@@ -413,8 +533,16 @@ export function SetlistPresentationMode({
               <p className="font-mono text-sm text-cyan-100">{activeBpm}</p>
             </div>
             <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
-              <p className="text-xs uppercase text-zinc-500">Beat</p>
-              <p className="font-mono text-sm text-cyan-100">{beat}</p>
+              <p className="text-xs uppercase text-zinc-500">
+                {isCountingIn ? "Entrada" : "Beat"}
+              </p>
+              <p className="font-mono text-sm text-cyan-100">
+                {isCountingIn
+                  ? countInValue === 0
+                    ? "Vai"
+                    : countInValue
+                  : beat}
+              </p>
             </div>
           </div>
         </div>

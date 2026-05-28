@@ -5,7 +5,7 @@ import { Providers } from "./providers";
 export const metadata: Metadata = {
   title: "SetlistOS",
   description:
-    "Organize setlists, search songs via Spotify, and track total show duration.",
+    "Organize setlists, search songs via Deezer, and track total show duration.",
 };
 
 export default function RootLayout({

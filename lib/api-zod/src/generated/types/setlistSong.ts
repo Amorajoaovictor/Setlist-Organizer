@@ -13,6 +13,10 @@ export interface SetlistSong {
   title: string;
   artist: string;
   durationMs: number;
+  /** @nullable */
+  bpm?: number | null;
+  deezerId?: string;
   spotifyId?: string;
-  albumArt?: string;
+  /** @nullable */
+  albumArt?: string | null;
 }

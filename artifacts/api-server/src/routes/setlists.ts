@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db } from "@workspace/db";
+import { db, ensureSetlistSongsBpmColumn } from "@workspace/db";
 import { z } from "zod/v4";
 import lyricsRouter from "./lyrics";
 
@@ -9,6 +9,8 @@ router.use("/:id/songs/:songId/lyrics", lyricsRouter);
 
 router.get("/", async (req, res) => {
   try {
+    await ensureSetlistSongsBpmColumn();
+
     const rows = await db.setlist.findMany({
       include: { songs: true },
       orderBy: { createdAt: "asc" },
@@ -64,6 +66,8 @@ router.get("/:id", async (req, res) => {
   }
 
   try {
+    await ensureSetlistSongsBpmColumn();
+
     const setlist = await db.setlist.findUnique({
       where: { id },
       include: { songs: { orderBy: { position: "asc" } } },
@@ -141,8 +145,10 @@ router.post("/:id/songs", async (req, res) => {
     title: z.string().min(1),
     artist: z.string().min(1),
     durationMs: z.number().int().positive(),
+    bpm: z.number().int().min(30).max(300).nullable().optional(),
+    deezerId: z.string().optional(),
     spotifyId: z.string().optional(),
-    albumArt: z.string().optional(),
+    albumArt: z.string().nullable().optional(),
   });
 
   const parsed = schema.safeParse(req.body);
@@ -152,6 +158,8 @@ router.post("/:id/songs", async (req, res) => {
   }
 
   try {
+    await ensureSetlistSongsBpmColumn();
+
     const maxPosition = await db.setlistSong.aggregate({
       where: { setlistId },
       _max: { position: true },
@@ -164,6 +172,8 @@ router.post("/:id/songs", async (req, res) => {
         title: parsed.data.title,
         artist: parsed.data.artist,
         durationMs: parsed.data.durationMs,
+        bpm: parsed.data.bpm ?? null,
+        deezerId: parsed.data.deezerId ?? null,
         spotifyId: parsed.data.spotifyId ?? null,
         albumArt: parsed.data.albumArt ?? null,
       },

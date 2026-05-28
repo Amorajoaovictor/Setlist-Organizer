@@ -19,14 +19,17 @@ import type {
 import type {
   AddSongInput,
   CreateSetlistInput,
+  DeezerTrack,
   ErrorResponse,
   HealthStatus,
+  LrclibLyricsResult,
   ReorderSongsInput,
-  SearchSpotifyTracksParams,
+  SaveSongLyricsInput,
+  SearchDeezerTracksParams,
   Setlist,
   SetlistSong,
   SetlistWithSongs,
-  SpotifyTrack,
+  SongLyrics,
   SuccessResponse,
   UpdateSetlistInput,
 } from "./api.schemas";
@@ -707,6 +710,270 @@ export const useRemoveSongFromSetlist = <
 };
 
 /**
+ * @summary Get stored lyrics for a setlist song
+ */
+export const getGetSongLyricsUrl = (id: number, songId: number) => {
+  return `/api/setlists/${id}/songs/${songId}/lyrics`;
+};
+
+export const getSongLyrics = async (
+  id: number,
+  songId: number,
+  options?: RequestInit,
+): Promise<SongLyrics> => {
+  return customFetch<SongLyrics>(getGetSongLyricsUrl(id, songId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSongLyricsQueryKey = (id: number, songId: number) => {
+  return [`/api/setlists/${id}/songs/${songId}/lyrics`] as const;
+};
+
+export const getGetSongLyricsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSongLyrics>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  songId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSongLyrics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSongLyricsQueryKey(id, songId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSongLyrics>>> = ({
+    signal,
+  }) => getSongLyrics(id, songId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(id && songId),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSongLyrics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSongLyricsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSongLyrics>>
+>;
+export type GetSongLyricsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get stored lyrics for a setlist song
+ */
+
+export function useGetSongLyrics<
+  TData = Awaited<ReturnType<typeof getSongLyrics>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  songId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSongLyrics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSongLyricsQueryOptions(id, songId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Save manual or LRCLIB-derived synced lyrics
+ */
+export const getSaveSongLyricsUrl = (id: number, songId: number) => {
+  return `/api/setlists/${id}/songs/${songId}/lyrics`;
+};
+
+export const saveSongLyrics = async (
+  id: number,
+  songId: number,
+  saveSongLyricsInput: SaveSongLyricsInput,
+  options?: RequestInit,
+): Promise<SongLyrics> => {
+  return customFetch<SongLyrics>(getSaveSongLyricsUrl(id, songId), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(saveSongLyricsInput),
+  });
+};
+
+export const getSaveSongLyricsMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveSongLyrics>>,
+    TError,
+    { id: number; songId: number; data: BodyType<SaveSongLyricsInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof saveSongLyrics>>,
+  TError,
+  { id: number; songId: number; data: BodyType<SaveSongLyricsInput> },
+  TContext
+> => {
+  const mutationKey = ["saveSongLyrics"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof saveSongLyrics>>,
+    { id: number; songId: number; data: BodyType<SaveSongLyricsInput> }
+  > = (props) => {
+    const { id, songId, data } = props ?? {};
+
+    return saveSongLyrics(id, songId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SaveSongLyricsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveSongLyrics>>
+>;
+export type SaveSongLyricsMutationBody = BodyType<SaveSongLyricsInput>;
+export type SaveSongLyricsMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Save manual or LRCLIB-derived synced lyrics
+ */
+export const useSaveSongLyrics = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveSongLyrics>>,
+    TError,
+    { id: number; songId: number; data: BodyType<SaveSongLyricsInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof saveSongLyrics>>,
+  TError,
+  { id: number; songId: number; data: BodyType<SaveSongLyricsInput> },
+  TContext
+> => {
+  return useMutation(getSaveSongLyricsMutationOptions(options));
+};
+
+/**
+ * @summary Fetch lyrics and timestamps from LRCLIB for a setlist song
+ */
+export const getSearchLrclibLyricsUrl = (id: number, songId: number) => {
+  return `/api/setlists/${id}/songs/${songId}/lyrics/search`;
+};
+
+export const searchLrclibLyrics = async (
+  id: number,
+  songId: number,
+  options?: RequestInit,
+): Promise<LrclibLyricsResult> => {
+  return customFetch<LrclibLyricsResult>(getSearchLrclibLyricsUrl(id, songId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getSearchLrclibLyricsMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof searchLrclibLyrics>>,
+    TError,
+    { id: number; songId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof searchLrclibLyrics>>,
+  TError,
+  { id: number; songId: number },
+  TContext
+> => {
+  const mutationKey = ["searchLrclibLyrics"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof searchLrclibLyrics>>,
+    { id: number; songId: number }
+  > = (props) => {
+    const { id, songId } = props ?? {};
+
+    return searchLrclibLyrics(id, songId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SearchLrclibLyricsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof searchLrclibLyrics>>
+>;
+
+export type SearchLrclibLyricsMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Fetch lyrics and timestamps from LRCLIB for a setlist song
+ */
+export const useSearchLrclibLyrics = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof searchLrclibLyrics>>,
+    TError,
+    { id: number; songId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof searchLrclibLyrics>>,
+  TError,
+  { id: number; songId: number },
+  TContext
+> => {
+  return useMutation(getSearchLrclibLyricsMutationOptions(options));
+};
+
+/**
  * @summary Reorder songs in a setlist
  */
 export const getReorderSetlistSongsUrl = (id: number) => {
@@ -794,11 +1061,9 @@ export const useReorderSetlistSongs = <
 };
 
 /**
- * @summary Search for tracks on Spotify
+ * @summary Search for tracks on Deezer
  */
-export const getSearchSpotifyTracksUrl = (
-  params: SearchSpotifyTracksParams,
-) => {
+export const getSearchDeezerTracksUrl = (params: SearchDeezerTracksParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -810,34 +1075,34 @@ export const getSearchSpotifyTracksUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/spotify/search?${stringifiedParams}`
-    : `/api/spotify/search`;
+    ? `/api/deezer/search?${stringifiedParams}`
+    : `/api/deezer/search`;
 };
 
-export const searchSpotifyTracks = async (
-  params: SearchSpotifyTracksParams,
+export const searchDeezerTracks = async (
+  params: SearchDeezerTracksParams,
   options?: RequestInit,
-): Promise<SpotifyTrack[]> => {
-  return customFetch<SpotifyTrack[]>(getSearchSpotifyTracksUrl(params), {
+): Promise<DeezerTrack[]> => {
+  return customFetch<DeezerTrack[]>(getSearchDeezerTracksUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getSearchSpotifyTracksQueryKey = (
-  params?: SearchSpotifyTracksParams,
+export const getSearchDeezerTracksQueryKey = (
+  params?: SearchDeezerTracksParams,
 ) => {
-  return [`/api/spotify/search`, ...(params ? [params] : [])] as const;
+  return [`/api/deezer/search`, ...(params ? [params] : [])] as const;
 };
 
-export const getSearchSpotifyTracksQueryOptions = <
-  TData = Awaited<ReturnType<typeof searchSpotifyTracks>>,
+export const getSearchDeezerTracksQueryOptions = <
+  TData = Awaited<ReturnType<typeof searchDeezerTracks>>,
   TError = ErrorType<ErrorResponse>,
 >(
-  params: SearchSpotifyTracksParams,
+  params: SearchDeezerTracksParams,
   options?: {
     query?: UseQueryOptions<
-      Awaited<ReturnType<typeof searchSpotifyTracks>>,
+      Awaited<ReturnType<typeof searchDeezerTracks>>,
       TError,
       TData
     >;
@@ -847,44 +1112,43 @@ export const getSearchSpotifyTracksQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getSearchSpotifyTracksQueryKey(params);
+    queryOptions?.queryKey ?? getSearchDeezerTracksQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof searchSpotifyTracks>>
-  > = ({ signal }) =>
-    searchSpotifyTracks(params, { signal, ...requestOptions });
+    Awaited<ReturnType<typeof searchDeezerTracks>>
+  > = ({ signal }) => searchDeezerTracks(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof searchSpotifyTracks>>,
+    Awaited<ReturnType<typeof searchDeezerTracks>>,
     TError,
     TData
   > & { queryKey: QueryKey };
 };
 
-export type SearchSpotifyTracksQueryResult = NonNullable<
-  Awaited<ReturnType<typeof searchSpotifyTracks>>
+export type SearchDeezerTracksQueryResult = NonNullable<
+  Awaited<ReturnType<typeof searchDeezerTracks>>
 >;
-export type SearchSpotifyTracksQueryError = ErrorType<ErrorResponse>;
+export type SearchDeezerTracksQueryError = ErrorType<ErrorResponse>;
 
 /**
- * @summary Search for tracks on Spotify
+ * @summary Search for tracks on Deezer
  */
 
-export function useSearchSpotifyTracks<
-  TData = Awaited<ReturnType<typeof searchSpotifyTracks>>,
+export function useSearchDeezerTracks<
+  TData = Awaited<ReturnType<typeof searchDeezerTracks>>,
   TError = ErrorType<ErrorResponse>,
 >(
-  params: SearchSpotifyTracksParams,
+  params: SearchDeezerTracksParams,
   options?: {
     query?: UseQueryOptions<
-      Awaited<ReturnType<typeof searchSpotifyTracks>>,
+      Awaited<ReturnType<typeof searchDeezerTracks>>,
       TError,
       TData
     >;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getSearchSpotifyTracksQueryOptions(params, options);
+  const queryOptions = getSearchDeezerTracksQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
