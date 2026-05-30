@@ -37,7 +37,7 @@ export function DeezerSearch({ onAddTrack, isAdding }: DeezerSearchProps) {
   );
 
   return (
-    <div className="flex flex-col h-full glass-panel rounded-2xl overflow-hidden">
+    <div className="flex h-full min-w-0 flex-col overflow-hidden rounded-2xl glass-panel">
       <div className="p-4 sm:p-6 border-b border-white/5 bg-background/40">
         <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
           <Search className="w-5 h-5 text-primary" />
@@ -94,7 +94,7 @@ export function DeezerSearch({ onAddTrack, isAdding }: DeezerSearchProps) {
           {tracks?.map((track) => (
             <div
               key={track.id}
-              className="flex items-center gap-3 p-2 rounded-xl active:bg-white/5 transition-colors group border border-transparent active:border-white/5"
+              className="group flex min-w-0 items-center gap-3 rounded-xl border border-transparent p-2 transition-colors active:border-white/5 active:bg-white/5"
             >
               {track.albumArt ? (
                 <img
@@ -117,7 +117,7 @@ export function DeezerSearch({ onAddTrack, isAdding }: DeezerSearchProps) {
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 pl-2">
+              <div className="flex shrink-0 items-center gap-3 pl-1 sm:pl-2">
                 <div className="hidden text-right font-mono text-xs text-muted-foreground sm:block">
                   <p>{formatDuration(track.durationMs)}</p>
                   <p className="text-primary/80">

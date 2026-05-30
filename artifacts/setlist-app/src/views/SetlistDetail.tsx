@@ -619,7 +619,7 @@ export default function SetlistDetail() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen min-w-0 overflow-x-hidden flex flex-col">
       {/* Background Hero */}
       <div className="absolute top-0 left-0 w-full h-96 z-0 pointer-events-none opacity-30">
         <img
@@ -634,10 +634,10 @@ export default function SetlistDetail() {
         />
       </div>
 
-      <main className="flex-1 relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="relative z-10 mx-auto w-full max-w-7xl min-w-0 flex-1 px-3 py-6 sm:px-6 sm:py-8 lg:px-8">
         {/* Setlist Header */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
+        <div className="mb-8 flex min-w-0 flex-col justify-between gap-6 md:flex-row md:items-end">
+          <div className="min-w-0">
             <Link
               href="/"
               className="inline-flex items-center text-sm font-medium text-primary hover:text-primary/80 mb-6 transition-colors"
@@ -647,39 +647,41 @@ export default function SetlistDetail() {
             </Link>
 
             {isEditingName ? (
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
                 <Input
                   autoFocus
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="text-3xl sm:text-5xl font-display font-bold h-auto py-2 w-full max-w-md bg-black/40"
+                  className="h-auto w-full min-w-0 max-w-md bg-black/40 py-2 text-3xl font-display font-bold sm:text-5xl"
                   onKeyDown={(e) => e.key === "Enter" && handleSaveName()}
                 />
-                <Button
-                  size="icon"
-                  variant="glow"
-                  onClick={handleSaveName}
-                  disabled={updateMutation.isPending}
-                >
-                  <Check className="w-5 h-5" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={() => setIsEditingName(false)}
-                >
-                  <X className="w-5 h-5" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="icon"
+                    variant="glow"
+                    onClick={handleSaveName}
+                    disabled={updateMutation.isPending}
+                  >
+                    <Check className="w-5 h-5" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => setIsEditingName(false)}
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
               </div>
             ) : (
-              <div className="flex items-center gap-4 group">
-                <h1 className="text-4xl sm:text-6xl font-display font-bold text-foreground tracking-tight text-glow">
+              <div className="group flex min-w-0 items-start gap-2 sm:items-center sm:gap-4">
+                <h1 className="min-w-0 break-words text-3xl font-display font-bold tracking-tight text-foreground text-glow sm:text-6xl">
                   {setlist.name}
                 </h1>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="rounded-full"
+                  className="shrink-0 rounded-full"
                   onClick={() => {
                     setEditName(setlist.name);
                     setIsEditingName(true);
@@ -691,8 +693,8 @@ export default function SetlistDetail() {
             )}
           </div>
 
-          <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-            <Button asChild variant="outline" className="gap-2">
+          <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 md:flex md:flex-wrap md:items-center">
+            <Button asChild variant="outline" className="w-full gap-2 md:w-auto">
               <Link href="/bpm">
                 <Gauge className="w-4 h-4" />
                 Modo metronomo
@@ -700,34 +702,34 @@ export default function SetlistDetail() {
             </Button>
             <Button
               variant="destructive"
-              className="gap-2"
+              className="w-full gap-2 md:w-auto"
               onClick={() => setIsDeleteModalOpen(true)}
             >
               <Trash2 className="w-4 h-4" />
               Delete Setlist
             </Button>
             {setlist.songs.length === 0 ? (
-              <Button variant="glow" disabled>
+              <Button variant="glow" className="w-full md:w-auto" disabled>
                 <Mic2 className="mr-2 h-5 w-5" />
                 Apresentar
               </Button>
             ) : (
-              <Button asChild variant="glow">
+              <Button asChild variant="glow" className="w-full md:w-auto">
                 <Link href={`/setlists/${setId}/presentation`}>
                   <Mic2 className="mr-2 h-5 w-5" />
                   Apresentar
                 </Link>
               </Button>
             )}
-            <div className="flex items-center gap-4 bg-black/40 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/5">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/5 bg-black/40 px-4 py-3 backdrop-blur-md sm:gap-4 sm:px-6 sm:py-4 md:min-w-64">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 sm:h-12 sm:w-12">
                 <Clock className="w-6 h-6 text-primary" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                   Total Runtime
                 </p>
-                <p className="text-3xl font-display font-bold text-foreground">
+                <p className="text-2xl font-display font-bold text-foreground sm:text-3xl">
                   {formatDuration(
                     setlist.songs.reduce((acc, s) => acc + s.durationMs, 0),
                   )}
@@ -737,9 +739,9 @@ export default function SetlistDetail() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-20">
+        <div className="grid min-w-0 grid-cols-1 gap-6 pb-20 lg:grid-cols-3 lg:gap-8">
           {/* Main Song List Column */}
-          <div className="lg:col-span-2 flex flex-col gap-6">
+          <div className="flex min-w-0 flex-col gap-6 lg:col-span-2">
             <div className="flex items-center justify-between px-2">
               <h2 className="text-xl font-display font-bold flex items-center gap-2">
                 Tracks{" "}
@@ -765,7 +767,7 @@ export default function SetlistDetail() {
                       {...provided.droppableProps}
                       ref={provided.innerRef}
                       className={cn(
-                        "space-y-3 p-2 rounded-2xl transition-colors",
+                        "min-w-0 space-y-3 rounded-2xl p-0 transition-colors sm:p-2",
                         snapshot.isDraggingOver ? "bg-white/5" : "",
                       )}
                     >
@@ -780,7 +782,7 @@ export default function SetlistDetail() {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               className={cn(
-                                "flex items-center gap-4 p-3 pr-4 rounded-xl transition-all duration-200 group border",
+                                "group grid min-w-0 grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3 rounded-xl border p-3 transition-all duration-200 sm:flex sm:gap-4 sm:pr-4",
                                 snapshot.isDragging
                                   ? "bg-secondary border-primary/50 shadow-2xl shadow-primary/20 z-50 scale-[1.02]"
                                   : "glass-panel active:bg-white/[0.08]",
@@ -789,12 +791,12 @@ export default function SetlistDetail() {
                             >
                               <div
                                 {...provided.dragHandleProps}
-                                className="p-2 -ml-2 text-muted-foreground active:text-foreground cursor-grab active:cursor-grabbing"
+                                className="-ml-2 cursor-grab p-2 text-muted-foreground active:cursor-grabbing active:text-foreground"
                               >
                                 <GripVertical className="w-5 h-5" />
                               </div>
 
-                              <div className="w-8 text-center font-mono text-sm font-bold text-muted-foreground">
+                              <div className="hidden w-8 text-center font-mono text-sm font-bold text-muted-foreground sm:block">
                                 {(index + 1).toString().padStart(2, "0")}
                               </div>
 
@@ -802,10 +804,10 @@ export default function SetlistDetail() {
                                 <img
                                   src={song.albumArt}
                                   alt="Album Art"
-                                  className="w-12 h-12 rounded-md object-cover shadow-md"
+                                  className="h-11 w-11 rounded-md object-cover shadow-md sm:h-12 sm:w-12"
                                 />
                               ) : (
-                                <div className="w-12 h-12 rounded-md bg-background flex items-center justify-center border border-white/5">
+                                <div className="flex h-11 w-11 items-center justify-center rounded-md border border-white/5 bg-background sm:h-12 sm:w-12">
                                   <Music className="w-5 h-5 text-muted-foreground" />
                                 </div>
                               )}
@@ -817,54 +819,59 @@ export default function SetlistDetail() {
                                 <p className="text-sm text-muted-foreground truncate">
                                   {song.artist}
                                 </p>
+                                <p className="mt-1 text-xs font-medium text-muted-foreground sm:hidden">
+                                  {formatDuration(song.durationMs)} - {song.bpm ? `${song.bpm} BPM` : "-- BPM"}
+                                </p>
                               </div>
 
-                              <div className="text-right font-mono font-medium text-foreground tracking-tight w-16">
+                              <div className="hidden w-16 text-right font-mono font-medium tracking-tight text-foreground sm:block">
                                 {formatDuration(song.durationMs)}
                               </div>
                               <div className="hidden w-16 text-right font-mono text-xs font-semibold text-primary sm:block">
                                 {song.bpm ? `${song.bpm} BPM` : "-- BPM"}
                               </div>
 
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-shrink-0"
-                                onClick={() => openBpmModal(song)}
-                              >
-                                <Gauge className="w-4 h-4 mr-2" />
-                                BPM
-                              </Button>
-
-                              <Button
-                                asChild
-                                variant="outline"
-                                size="sm"
-                                className="flex-shrink-0"
-                              >
-                                <Link
-                                  href={`/setlists/${setId}/songs/${song.id}/lyrics`}
+                              <div className="col-span-3 grid min-w-0 grid-cols-[1fr_1fr_auto] gap-2 sm:contents">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="min-w-0 px-3 sm:flex-shrink-0"
+                                  onClick={() => openBpmModal(song)}
                                 >
-                                  {pendingLyricsSongIds.has(song.id) ? (
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                  ) : (
-                                    <FileText className="w-4 h-4 mr-2" />
-                                  )}
-                                  {pendingLyricsSongIds.has(song.id)
-                                    ? "Lyrics..."
-                                    : "Lyrics"}
-                                </Link>
-                              </Button>
+                                  <Gauge className="mr-2 h-4 w-4" />
+                                  BPM
+                                </Button>
 
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="bg-destructive/10 text-destructive active:bg-destructive/30 transition-all rounded-full h-10 w-10 ml-2 flex-shrink-0"
-                                onClick={() => handleRemoveSong(song.id)}
-                                disabled={removeSongMutation.isPending}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                                <Button
+                                  asChild
+                                  variant="outline"
+                                  size="sm"
+                                  className="min-w-0 px-3 sm:flex-shrink-0"
+                                >
+                                  <Link
+                                    href={`/setlists/${setId}/songs/${song.id}/lyrics`}
+                                  >
+                                    {pendingLyricsSongIds.has(song.id) ? (
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <FileText className="mr-2 h-4 w-4" />
+                                    )}
+                                    {pendingLyricsSongIds.has(song.id)
+                                      ? "Lyrics..."
+                                      : "Lyrics"}
+                                  </Link>
+                                </Button>
+
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 shrink-0 rounded-full bg-destructive/10 text-destructive transition-all active:bg-destructive/30 sm:ml-2 sm:h-10 sm:w-10"
+                                  onClick={() => handleRemoveSong(song.id)}
+                                  disabled={removeSongMutation.isPending}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </div>
                           )}
                         </Draggable>
@@ -878,7 +885,7 @@ export default function SetlistDetail() {
           </div>
 
           {/* Deezer Search Sidebar */}
-          <div className="lg:col-span-1 h-[600px] lg:h-[calc(100vh-250px)] lg:sticky lg:top-28">
+          <div className="min-w-0 lg:sticky lg:top-28 lg:col-span-1 lg:h-[calc(100vh-250px)]">
             <DeezerSearch
               onAddTrack={handleAddTrack}
               isAdding={addSongMutation.isPending}
@@ -897,12 +904,13 @@ export default function SetlistDetail() {
             Are you sure you want to delete this setlist? This action cannot be
             undone.
           </p>
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)}>
+          <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end">
+            <Button className="w-full sm:w-auto" variant="ghost" onClick={() => setIsDeleteModalOpen(false)}>
               Cancel
             </Button>
             <Button
               variant="destructive"
+              className="w-full sm:w-auto"
               onClick={handleDeleteSetlist}
               disabled={deleteMutation.isPending}
             >
@@ -918,31 +926,31 @@ export default function SetlistDetail() {
         title="Configurar BPM da musica"
         className="lg:max-w-5xl"
       >
-        <div className="max-h-[78vh] space-y-6 overflow-y-auto pr-1">
-          <div>
+        <div className="max-h-[calc(100dvh-6.5rem)] space-y-4 overflow-y-auto overflow-x-hidden sm:max-h-[78vh] sm:space-y-6 sm:pr-1">
+          <div className="min-w-0">
             <p className="text-sm font-medium text-muted-foreground">Musica</p>
-            <h3 className="mt-1 text-2xl font-display font-bold">
+            <h3 className="mt-1 break-words text-xl font-display font-bold sm:text-2xl">
               {bpmSong?.title}
             </h3>
-            <p className="text-muted-foreground">{bpmSong?.artist}</p>
+            <p className="break-words text-sm text-muted-foreground sm:text-base">{bpmSong?.artist}</p>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-white/5 bg-background/40 p-6">
+          <div className="grid min-w-0 gap-4 xl:grid-cols-[0.9fr_1.1fr] xl:gap-6">
+            <div className="flex min-w-0 flex-col items-center justify-center rounded-2xl border border-white/5 bg-background/40 p-3 sm:p-6">
               <div className="text-sm font-medium uppercase tracking-[0.25em] text-muted-foreground">
                 BPM
               </div>
-              <div className="mt-4 font-display text-8xl font-bold leading-none text-glow">
+              <div className="mt-3 font-display text-6xl font-bold leading-none text-glow sm:mt-4 sm:text-8xl">
                 {bpmDraft}
               </div>
               <div className="mt-5 grid w-full max-w-sm grid-cols-3 gap-2">
-                <Button type="button" variant="secondary" onClick={() => setBpmDraft((value) => clampSongBpm(value - 1))}>
+                <Button type="button" variant="secondary" className="min-w-0 px-2" onClick={() => setBpmDraft((value) => clampSongBpm(value - 1))}>
                   -1
                 </Button>
-                <Button type="button" variant="outline" onClick={handleBpmTap}>
+                <Button type="button" variant="outline" className="min-w-0 px-2" onClick={handleBpmTap}>
                   Tap
                 </Button>
-                <Button type="button" variant="secondary" onClick={() => setBpmDraft((value) => clampSongBpm(value + 1))}>
+                <Button type="button" variant="secondary" className="min-w-0 px-2" onClick={() => setBpmDraft((value) => clampSongBpm(value + 1))}>
                   +1
                 </Button>
               </div>
@@ -951,7 +959,7 @@ export default function SetlistDetail() {
                 variant={isBpmPreviewPlaying ? "secondary" : "glow"}
                 size="lg"
                 onClick={toggleBpmPreview}
-                className="mt-5 w-full max-w-sm"
+                className="mt-5 w-full max-w-sm min-w-0 px-4 text-base"
               >
                 {isBpmPreviewPlaying ? (
                   <Pause className="mr-2 h-5 w-5" />
@@ -962,9 +970,9 @@ export default function SetlistDetail() {
               </Button>
             </div>
 
-            <div className="space-y-6">
+            <div className="min-w-0 space-y-6">
               <div className="space-y-3">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                   <label className="text-sm font-medium text-muted-foreground">BPM ajustavel</label>
                   <Input
                     type="number"
@@ -977,7 +985,7 @@ export default function SetlistDetail() {
                         setBpmDraft(clampSongBpm(value));
                       }
                     }}
-                    className="h-10 w-24 text-center"
+                    className="h-10 w-full text-center sm:w-24"
                   />
                 </div>
                 <Slider
@@ -989,8 +997,8 @@ export default function SetlistDetail() {
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-2">
+              <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+                <label className="min-w-0 space-y-2">
                   <span className="text-sm font-medium text-muted-foreground">Compasso</span>
                   <Select value={bpmTimeSignature} onValueChange={(value) => setBpmTimeSignature(value as TimeSignature)}>
                     <SelectTrigger className="h-12 rounded-xl border-2 bg-background/50">
@@ -1006,7 +1014,7 @@ export default function SetlistDetail() {
                   </Select>
                 </label>
 
-                <label className="space-y-2">
+                <label className="min-w-0 space-y-2">
                   <span className="text-sm font-medium text-muted-foreground">Som</span>
                   <Select value={bpmSoundStyle} onValueChange={(value) => setBpmSoundStyle(value as SoundStyle)}>
                     <SelectTrigger className="h-12 rounded-xl border-2 bg-background/50">
@@ -1022,7 +1030,7 @@ export default function SetlistDetail() {
                   </Select>
                 </label>
 
-                <label className="space-y-2">
+                <label className="min-w-0 space-y-2">
                   <span className="text-sm font-medium text-muted-foreground">Subdivisao simples</span>
                   <Select value={bpmSubdivision} onValueChange={(value) => setBpmSubdivision(value as Subdivision)}>
                     <SelectTrigger className="h-12 rounded-xl border-2 bg-background/50">
@@ -1038,8 +1046,8 @@ export default function SetlistDetail() {
                   </Select>
                 </label>
 
-                <div className="flex items-center justify-between rounded-2xl border border-white/5 bg-background/40 p-4">
-                  <div>
+                <div className="flex min-w-0 items-center justify-between gap-4 rounded-2xl border border-white/5 bg-background/40 p-3 sm:p-4">
+                  <div className="min-w-0">
                     <div className="text-sm font-medium">Acento no primeiro tempo</div>
                     <div className="text-xs text-muted-foreground">Realca o tempo 1.</div>
                   </div>
@@ -1047,7 +1055,7 @@ export default function SetlistDetail() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-white/5 bg-background/40 p-4">
+              <div className="min-w-0 rounded-2xl border border-white/5 bg-background/40 p-3 sm:p-4">
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                     <Volume2 className="h-4 w-4 text-primary" />
@@ -1055,12 +1063,12 @@ export default function SetlistDetail() {
                   </div>
                   <span className="text-sm text-muted-foreground">{bpmTimeSignature}</span>
                 </div>
-                <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${getBeatCount(bpmTimeSignature)}, minmax(0, 1fr))` }}>
+                <div className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: `repeat(${getBeatCount(bpmTimeSignature)}, minmax(0, 1fr))` }}>
                   {Array.from({ length: getBeatCount(bpmTimeSignature) }, (_, index) => index + 1).map((beat) => (
                     <div
                       key={beat}
                       className={cn(
-                        "flex aspect-square items-center justify-center rounded-2xl border text-2xl font-bold transition-all",
+                        "flex aspect-square min-w-0 items-center justify-center rounded-xl border text-xl font-bold transition-all sm:rounded-2xl sm:text-2xl",
                         previewBeat === beat && isBpmPreviewPlaying
                           ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                           : "border-white/10 bg-secondary/50 text-muted-foreground",
@@ -1077,7 +1085,7 @@ export default function SetlistDetail() {
                       <span
                         key={index}
                         className={cn(
-                          "h-2 w-8 rounded-full bg-muted transition-colors",
+                          "h-2 w-full max-w-8 rounded-full bg-muted transition-colors",
                           previewSubdivision === index && isBpmPreviewPlaying && "bg-primary",
                         )}
                       />
@@ -1088,8 +1096,8 @@ export default function SetlistDetail() {
             </div>
           </div>
 
-          <div className="space-y-3 rounded-2xl border border-white/5 bg-background/40 p-4">
-            <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 space-y-3 rounded-2xl border border-white/5 bg-background/40 p-3 sm:p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-medium">Presets salvos</p>
                 <p className="text-xs text-muted-foreground">
@@ -1102,6 +1110,7 @@ export default function SetlistDetail() {
                 size="sm"
                 onClick={saveCurrentBpmAsPreset}
                 disabled={isSavingBpmPreset}
+                className="w-full sm:w-auto"
               >
                 <Save className="mr-2 h-4 w-4" />
                 {isSavingBpmPreset ? "Salvando..." : "Salvar preset"}
@@ -1152,11 +1161,11 @@ export default function SetlistDetail() {
             </p>
           ) : null}
 
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="ghost" onClick={closeBpmModal}>
+          <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="ghost" className="w-full sm:w-auto" onClick={closeBpmModal}>
               Cancelar
             </Button>
-            <Button type="button" onClick={saveSongBpm} disabled={isSavingBpm}>
+            <Button type="button" className="w-full sm:w-auto" onClick={saveSongBpm} disabled={isSavingBpm}>
               <Save className="mr-2 h-4 w-4" />
               {isSavingBpm ? "Salvando..." : "Salvar na musica"}
             </Button>
