@@ -52,7 +52,7 @@ export default function LyricsSyncEditor() {
         <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-fuchsia-500/10 blur-3xl" />
       </div>
 
-      <div className="relative mx-auto w-full max-w-[96rem] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <div className="relative mx-auto w-full max-w-[96rem] px-3 py-5 sm:px-6 lg:px-8 lg:py-8">
         <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
             <Link
@@ -62,15 +62,15 @@ export default function LyricsSyncEditor() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Voltar para {setlist.name}
             </Link>
-            <div className="flex min-w-0 items-center gap-4">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
               {song.albumArt ? (
                 <img
                   src={song.albumArt}
                   alt=""
-                  className="h-16 w-16 flex-shrink-0 rounded-xl object-cover shadow-xl shadow-black/40"
+                  className="h-14 w-14 flex-shrink-0 rounded-xl object-cover shadow-xl shadow-black/40 sm:h-16 sm:w-16"
                 />
               ) : (
-                <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 sm:h-16 sm:w-16">
                   <Music className="h-7 w-7 text-muted-foreground" />
                 </div>
               )}
@@ -78,7 +78,7 @@ export default function LyricsSyncEditor() {
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
                   Tela de sincronizacao
                 </p>
-                <h1 className="truncate font-display text-3xl font-bold text-white sm:text-5xl">
+                <h1 className="truncate font-display text-2xl font-bold text-white sm:text-5xl">
                   {song.title}
                 </h1>
                 <p className="truncate text-sm text-muted-foreground">{song.artist}</p>
@@ -86,7 +86,7 @@ export default function LyricsSyncEditor() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-black/35 px-5 py-4 backdrop-blur-xl">
+          <div className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-black/35 px-4 py-3 backdrop-blur-xl sm:w-auto sm:gap-4 sm:px-5 sm:py-4">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
               <Clock className="h-5 w-5 text-primary" />
             </div>
@@ -94,7 +94,7 @@ export default function LyricsSyncEditor() {
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Duracao
               </p>
-              <p className="font-display text-2xl font-bold text-white">
+              <p className="font-display text-xl font-bold text-white sm:text-2xl">
                 {formatDuration(song.durationMs)}
               </p>
             </div>

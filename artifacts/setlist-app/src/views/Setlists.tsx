@@ -58,10 +58,11 @@ export default function Setlists() {
               variant="glow" 
               size="lg" 
               onClick={() => setIsCreateModalOpen(true)}
-              className="w-full sm:w-auto"
+              className="h-11 w-auto rounded-full px-4 text-sm sm:h-14 sm:rounded-xl sm:px-8 sm:text-lg"
             >
-              <Plus className="w-5 h-5 mr-2" />
-              New Setlist
+              <Plus className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="sm:hidden">Nova</span>
+              <span className="hidden sm:inline">New Setlist</span>
             </Button>
           </div>
 

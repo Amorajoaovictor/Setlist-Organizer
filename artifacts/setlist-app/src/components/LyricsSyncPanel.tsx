@@ -677,7 +677,7 @@ export function LyricsSyncPanel({
   }
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-cyan-400/15 bg-[#050712]/95 p-4 shadow-2xl shadow-cyan-950/40 sm:p-6">
+    <section className="relative overflow-hidden rounded-2xl border border-cyan-400/15 bg-[#050712]/95 p-3 shadow-2xl shadow-cyan-950/40 sm:p-6">
       <div className="pointer-events-none absolute inset-0 opacity-70">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent" />
         <div className="absolute left-[-20%] top-[-35%] h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
@@ -688,9 +688,9 @@ export function LyricsSyncPanel({
       <div className="relative">
         <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+            <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200 sm:tracking-[0.2em]">
               <Mic2 className="h-3.5 w-3.5" />
-              Editor de Sincronizacao de Karaoke
+              <span className="truncate">Editor de Sincronizacao de Karaoke</span>
             </div>
             <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">
               Neon Lyric Sync
@@ -700,8 +700,14 @@ export function LyricsSyncPanel({
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={searchLrclib} disabled={isSearching}>
+          <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2 lg:flex lg:flex-wrap">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={searchLrclib}
+              disabled={isSearching}
+              className="w-full lg:w-auto"
+            >
               {isSearching ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -709,7 +715,13 @@ export function LyricsSyncPanel({
               )}
               Buscar LRCLIB
             </Button>
-            <Button size="sm" variant="glow" onClick={saveLyrics} disabled={isSaving}>
+            <Button
+              size="sm"
+              variant="glow"
+              onClick={saveLyrics}
+              disabled={isSaving}
+              className="w-full lg:w-auto"
+            >
               {isSaving ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -726,9 +738,9 @@ export function LyricsSyncPanel({
             Carregando letras
           </div>
         ) : (
-          <div className="grid gap-5 xl:grid-cols-[minmax(18rem,0.9fr)_minmax(0,1.35fr)]">
-            <div className="space-y-4">
-              <div className="rounded-xl border border-white/10 bg-black/35 p-4">
+          <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(18rem,0.9fr)_minmax(0,1.35fr)]">
+            <div className="min-w-0 space-y-4">
+              <div className="rounded-xl border border-white/10 bg-black/35 p-3 sm:p-4">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 text-sm font-semibold text-white">
                     <FileText className="h-4 w-4 text-cyan-300" />
@@ -756,7 +768,7 @@ export function LyricsSyncPanel({
                 </Button>
               </div>
 
-              <div className="space-y-3 rounded-xl border border-white/10 bg-black/35 p-4">
+              <div className="space-y-3 rounded-xl border border-white/10 bg-black/35 p-3 sm:p-4">
                 <div className="flex items-center gap-2 text-sm font-semibold text-white">
                   <SlidersHorizontal className="h-4 w-4 text-fuchsia-300" />
                   Audio e metronomo
@@ -803,7 +815,7 @@ export function LyricsSyncPanel({
                 ) : (
                   <audio ref={audioRef} className="hidden" />
                 )}
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
+                <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-[minmax(0,1fr)_auto]">
                   <label className="relative">
                     <Gauge className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                     <Input
@@ -855,21 +867,21 @@ export function LyricsSyncPanel({
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="rounded-xl border border-cyan-300/20 bg-gradient-to-br from-cyan-300/10 via-white/[0.04] to-fuchsia-400/10 p-4 shadow-xl shadow-cyan-950/30">
+            <div className="min-w-0 space-y-4">
+              <div className="rounded-xl border border-cyan-300/20 bg-gradient-to-br from-cyan-300/10 via-white/[0.04] to-fuchsia-400/10 p-3 shadow-xl shadow-cyan-950/30 sm:p-4">
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200 sm:tracking-[0.2em]">
                       <Activity className="h-3.5 w-3.5" />
                       Linha atual
                     </p>
-                    <p className="mt-2 text-xl font-bold leading-snug text-white sm:text-2xl">
+                    <p className="mt-2 break-words text-lg font-bold leading-snug text-white sm:text-2xl">
                       {currentLine?.text ?? "Nenhuma linha selecionada"}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-cyan-300/20 bg-black/40 px-4 py-3 text-right">
+                  <div className="rounded-xl border border-cyan-300/20 bg-black/40 px-3 py-3 text-left sm:px-4 sm:text-right">
                     <p className="text-xs uppercase tracking-wider text-slate-500">Marcacao</p>
-                    <p className="font-mono text-2xl text-cyan-200">
+                    <p className="font-mono text-xl text-cyan-200 sm:text-2xl">
                       {currentLine?.startMs == null ? "--:--.--" : formatMs(currentLine.startMs)}
                     </p>
                   </div>
@@ -890,9 +902,9 @@ export function LyricsSyncPanel({
                     variant="glow"
                     onClick={markCurrentTimestamp}
                     disabled={draft.lines.length === 0}
-                    className="min-w-0"
+                    className="min-w-0 px-3 text-xs sm:text-sm"
                   >
-                    Marcar tempo da linha
+                    <span className="truncate">Marcar tempo da linha</span>
                   </Button>
                   <Button variant="outline" onClick={() => moveLine(1)} aria-label="Proxima linha">
                     <ChevronRight className="h-4 w-4" />
@@ -922,7 +934,7 @@ export function LyricsSyncPanel({
                 onSeek={seekAudio}
               />
 
-              <div className="rounded-xl border border-white/10 bg-black/35 p-3">
+              <div className="min-w-0 rounded-xl border border-white/10 bg-black/35 p-3">
                 <div className="mb-3 flex items-center justify-between gap-3 px-1">
                   <div className="flex items-center gap-2 text-sm font-semibold text-white">
                     <ListMusic className="h-4 w-4 text-cyan-300" />
@@ -940,7 +952,7 @@ export function LyricsSyncPanel({
                       <div
                         key={`${line.index}-${index}`}
                         className={cn(
-                          "grid gap-3 rounded-xl border p-3 text-sm transition sm:grid-cols-[3rem_minmax(0,1fr)_6.5rem]",
+                          "grid min-w-0 gap-3 rounded-xl border p-3 text-sm transition min-[420px]:grid-cols-[3rem_minmax(0,1fr)] sm:grid-cols-[3rem_minmax(0,1fr)_6.5rem]",
                           selectedLine === index
                             ? "border-cyan-300/60 bg-cyan-300/10 text-white shadow-lg shadow-cyan-950/30"
                             : "border-white/10 bg-white/[0.03] text-slate-400 hover:border-white/20",
@@ -959,9 +971,9 @@ export function LyricsSyncPanel({
                           onClick={() => setSelectedLine(index)}
                           className="min-w-0 text-left leading-5"
                         >
-                          <span className="line-clamp-2">{line.text}</span>
+                          <span className="line-clamp-2 break-words">{line.text}</span>
                         </button>
-                        <label className="flex items-center gap-2">
+                        <label className="flex min-w-0 items-center gap-2 min-[420px]:col-span-2 sm:col-span-1">
                           <Timer className="h-3.5 w-3.5 flex-shrink-0 text-slate-500" />
                           <Input
                             type="number"

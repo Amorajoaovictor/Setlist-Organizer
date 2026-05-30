@@ -678,58 +678,75 @@ export default function SetlistDetail() {
                 <h1 className="min-w-0 break-words text-3xl font-display font-bold tracking-tight text-foreground text-glow sm:text-6xl">
                   {setlist.name}
                 </h1>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="shrink-0 rounded-full"
-                  onClick={() => {
-                    setEditName(setlist.name);
-                    setIsEditingName(true);
-                  }}
-                >
-                  <Edit2 className="w-5 h-5 text-muted-foreground active:text-primary" />
-                </Button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-9 w-9 rounded-full sm:h-11 sm:w-11"
+                    onClick={() => {
+                      setEditName(setlist.name);
+                      setIsEditingName(true);
+                    }}
+                    aria-label="Editar nome da setlist"
+                  >
+                    <Edit2 className="h-4 w-4 text-muted-foreground active:text-primary sm:h-5 sm:w-5" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-9 w-9 rounded-lg border border-destructive/20 bg-destructive/10 text-destructive shadow-none hover:bg-destructive/15 hover:text-destructive sm:h-11 sm:w-11"
+                    onClick={() => setIsDeleteModalOpen(true)}
+                    aria-label="Excluir setlist"
+                  >
+                    <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </Button>
+                </div>
               </div>
             )}
           </div>
 
-          <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 md:flex md:flex-wrap md:items-center">
-            <Button asChild variant="outline" className="w-full gap-2 md:w-auto">
+          <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 md:flex md:flex-wrap md:items-center">
+            <Button
+              asChild
+              variant="outline"
+              className="hidden h-auto min-h-0 w-full flex-col gap-1 rounded-2xl border-white/10 bg-black/30 px-2 py-2 text-[11px] leading-none text-muted-foreground backdrop-blur-md sm:flex sm:flex-row sm:gap-2 sm:text-sm md:h-11 md:w-auto md:px-6 md:py-2"
+            >
               <Link href="/bpm">
-                <Gauge className="w-4 h-4" />
-                Modo metronomo
+                <Gauge className="h-4 w-4" />
+                <span className="sm:hidden">BPM</span>
+                <span className="hidden sm:inline">Modo metronomo</span>
               </Link>
             </Button>
-            <Button
-              variant="destructive"
-              className="w-full gap-2 md:w-auto"
-              onClick={() => setIsDeleteModalOpen(true)}
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete Setlist
-            </Button>
             {setlist.songs.length === 0 ? (
-              <Button variant="glow" className="w-full md:w-auto" disabled>
-                <Mic2 className="mr-2 h-5 w-5" />
+              <Button
+                variant="glow"
+                className="h-12 w-auto justify-self-end rounded-2xl px-3 text-[11px] leading-none shadow-none sm:h-auto sm:min-h-0 sm:w-full sm:flex-row sm:gap-2 sm:px-2 sm:py-2 sm:text-sm md:h-11 md:w-auto md:px-6 md:py-2"
+                disabled
+              >
+                <Mic2 className="h-4 w-4 sm:h-5 sm:w-5" />
                 Apresentar
               </Button>
             ) : (
-              <Button asChild variant="glow" className="w-full md:w-auto">
+              <Button
+                asChild
+                variant="glow"
+                className="h-12 w-auto justify-self-end rounded-2xl px-3 text-[11px] leading-none shadow-none sm:h-auto sm:min-h-0 sm:w-full sm:flex-row sm:gap-2 sm:px-2 sm:py-2 sm:text-sm md:h-11 md:w-auto md:px-6 md:py-2"
+              >
                 <Link href={`/setlists/${setId}/presentation`}>
-                  <Mic2 className="mr-2 h-5 w-5" />
+                  <Mic2 className="h-4 w-4 sm:h-5 sm:w-5" />
                   Apresentar
                 </Link>
               </Button>
             )}
-            <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/5 bg-black/40 px-4 py-3 backdrop-blur-md sm:gap-4 sm:px-6 sm:py-4 md:min-w-64">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 sm:h-12 sm:w-12">
-                <Clock className="w-6 h-6 text-primary" />
+            <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/5 bg-black/40 px-3 py-2.5 backdrop-blur-md sm:gap-4 sm:px-6 sm:py-4 md:min-w-64">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 sm:h-12 sm:w-12">
+                <Clock className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:text-sm">
                   Total Runtime
                 </p>
-                <p className="text-2xl font-display font-bold text-foreground sm:text-3xl">
+                <p className="text-xl font-display font-bold text-foreground sm:text-3xl">
                   {formatDuration(
                     setlist.songs.reduce((acc, s) => acc + s.durationMs, 0),
                   )}
