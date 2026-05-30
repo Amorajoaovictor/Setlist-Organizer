@@ -720,20 +720,20 @@ export default function SetlistDetail() {
             {setlist.songs.length === 0 ? (
               <Button
                 variant="glow"
-                className="h-12 w-auto justify-self-end rounded-2xl px-3 text-[11px] leading-none shadow-none sm:h-auto sm:min-h-0 sm:w-full sm:flex-row sm:gap-2 sm:px-2 sm:py-2 sm:text-sm md:h-11 md:w-auto md:px-6 md:py-2"
+                className="h-12 w-auto -translate-x-2 justify-self-end gap-3 rounded-2xl border-2 border-[#57f2ff] bg-[#10d5e8]/10 px-3 text-[11px] leading-none text-[#ecfeff] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)] hover:bg-[#10d5e8]/15 sm:h-auto sm:min-h-0 sm:w-full sm:translate-x-0 sm:gap-2 sm:border-transparent sm:bg-primary sm:px-2 sm:py-2 sm:text-sm sm:text-primary-foreground sm:shadow-none md:h-11 md:w-auto md:px-6 md:py-2"
                 disabled
               >
-                <Mic2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Mic2 className="h-4 w-4 text-[#57f2ff] sm:h-5 sm:w-5 sm:text-current" />
                 Apresentar
               </Button>
             ) : (
               <Button
                 asChild
                 variant="glow"
-                className="h-12 w-auto justify-self-end rounded-2xl px-3 text-[11px] leading-none shadow-none sm:h-auto sm:min-h-0 sm:w-full sm:flex-row sm:gap-2 sm:px-2 sm:py-2 sm:text-sm md:h-11 md:w-auto md:px-6 md:py-2"
+                className="h-12 w-auto -translate-x-2 justify-self-end gap-3 rounded-2xl border-2 border-[#57f2ff] bg-[#10d5e8]/10 px-3 text-[11px] leading-none text-[#ecfeff] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)] hover:bg-[#10d5e8]/15 sm:h-auto sm:min-h-0 sm:w-full sm:translate-x-0 sm:gap-2 sm:border-transparent sm:bg-primary sm:px-2 sm:py-2 sm:text-sm sm:text-primary-foreground sm:shadow-none md:h-11 md:w-auto md:px-6 md:py-2"
               >
                 <Link href={`/setlists/${setId}/presentation`}>
-                  <Mic2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <Mic2 className="h-4 w-4 text-[#57f2ff] sm:h-5 sm:w-5 sm:text-current" />
                   Apresentar
                 </Link>
               </Button>
