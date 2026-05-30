@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -20,6 +20,11 @@ import {
   Loader2,
   FileText,
   Mic2,
+  Gauge,
+  Play,
+  Pause,
+  Save,
+  Volume2,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -40,6 +45,15 @@ import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { Modal } from "@/components/Modal";
 import { DeezerSearch } from "@/components/DeezerSearch";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatDuration, cn } from "@/lib/utils";
 
 type LyricLine = {
@@ -54,6 +68,55 @@ type LrclibLyricsResult = {
   syncedLyrics: string | null;
   lines: LyricLine[];
 };
+
+type AudioWindow = Window &
+  typeof globalThis & {
+    webkitAudioContext?: typeof AudioContext;
+  };
+
+type BpmPreset = {
+  id: number;
+  name: string;
+  bpm: number;
+  timeSignature: "2/4" | "3/4" | "4/4" | "6/8";
+  accentFirstBeat: boolean;
+  subdivision: 1 | 2 | 4;
+  soundStyle: "classic" | "wood" | "soft";
+  createdAt: string;
+  updatedAt: string;
+};
+
+type TimeSignature = BpmPreset["timeSignature"];
+type SoundStyle = BpmPreset["soundStyle"];
+type Subdivision = "1" | "2" | "4";
+
+const MIN_SONG_BPM = 30;
+const MAX_SONG_BPM = 300;
+const TAP_RESET_MS = 2200;
+const timeSignatureOptions: Array<{ value: TimeSignature; label: string; beats: number }> = [
+  { value: "2/4", label: "2/4", beats: 2 },
+  { value: "3/4", label: "3/4", beats: 3 },
+  { value: "4/4", label: "4/4", beats: 4 },
+  { value: "6/8", label: "6/8", beats: 6 },
+];
+const soundOptions: Array<{ value: SoundStyle; label: string }> = [
+  { value: "classic", label: "Click digital" },
+  { value: "wood", label: "Wood block" },
+  { value: "soft", label: "Pulso suave" },
+];
+const subdivisionOptions: Array<{ value: Subdivision; label: string }> = [
+  { value: "1", label: "Sem subdivisao" },
+  { value: "2", label: "Colcheias" },
+  { value: "4", label: "Semicolcheias" },
+];
+
+function clampSongBpm(value: number) {
+  return Math.min(MAX_SONG_BPM, Math.max(MIN_SONG_BPM, Math.round(value)));
+}
+
+function getBeatCount(signature: TimeSignature) {
+  return timeSignatureOptions.find((option) => option.value === signature)?.beats ?? 4;
+}
 
 export default function SetlistDetail() {
   const params = useParams<{ id: string }>();
@@ -74,9 +137,90 @@ export default function SetlistDetail() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [bpmSong, setBpmSong] = useState<SetlistSong | null>(null);
+  const [bpmDraft, setBpmDraft] = useState(120);
+  const [bpmTimeSignature, setBpmTimeSignature] = useState<TimeSignature>("4/4");
+  const [bpmAccentFirstBeat, setBpmAccentFirstBeat] = useState(true);
+  const [bpmSubdivision, setBpmSubdivision] = useState<Subdivision>("1");
+  const [bpmSoundStyle, setBpmSoundStyle] = useState<SoundStyle>("classic");
+  const [isSavingBpm, setIsSavingBpm] = useState(false);
+  const [isSavingBpmPreset, setIsSavingBpmPreset] = useState(false);
+  const [bpmError, setBpmError] = useState<string | null>(null);
+  const [isBpmPreviewPlaying, setIsBpmPreviewPlaying] = useState(false);
+  const [previewBeat, setPreviewBeat] = useState(1);
+  const [previewSubdivision, setPreviewSubdivision] = useState(0);
+  const [tapTimes, setTapTimes] = useState<number[]>([]);
+  const [bpmPresets, setBpmPresets] = useState<BpmPreset[]>([]);
+  const [isLoadingBpmPresets, setIsLoadingBpmPresets] = useState(false);
   const [pendingLyricsSongIds, setPendingLyricsSongIds] = useState<Set<number>>(
     () => new Set(),
   );
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const bpmPreviewTimerRef = useRef<number | null>(null);
+  const bpmPreviewBeatRef = useRef(0);
+  const bpmPreviewSubdivisionRef = useRef(0);
+  const latestBpmStateRef = useRef({
+    bpm: bpmDraft,
+    timeSignature: bpmTimeSignature,
+    accentFirstBeat: bpmAccentFirstBeat,
+    subdivision: bpmSubdivision,
+    soundStyle: bpmSoundStyle,
+  });
+
+  useEffect(() => {
+    latestBpmStateRef.current = {
+      bpm: bpmDraft,
+      timeSignature: bpmTimeSignature,
+      accentFirstBeat: bpmAccentFirstBeat,
+      subdivision: bpmSubdivision,
+      soundStyle: bpmSoundStyle,
+    };
+  }, [bpmAccentFirstBeat, bpmDraft, bpmSoundStyle, bpmSubdivision, bpmTimeSignature]);
+
+  useEffect(() => {
+    return () => {
+      if (bpmPreviewTimerRef.current) {
+        window.clearTimeout(bpmPreviewTimerRef.current);
+      }
+      void audioContextRef.current?.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadBpmPresets() {
+      setIsLoadingBpmPresets(true);
+
+      try {
+        const response = await fetch("/api/bpm-presets");
+
+        if (!response.ok) {
+          throw new Error("Failed to load BPM presets");
+        }
+
+        const payload = (await response.json()) as BpmPreset[];
+
+        if (!cancelled) {
+          setBpmPresets(payload);
+        }
+      } catch {
+        if (!cancelled) {
+          setBpmPresets([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingBpmPresets(false);
+        }
+      }
+    }
+
+    void loadBpmPresets();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -227,6 +371,211 @@ export default function SetlistDetail() {
     );
   };
 
+  const openBpmModal = (song: SetlistSong) => {
+    setBpmSong(song);
+    setBpmDraft(song.bpm ?? 120);
+    setBpmTimeSignature("4/4");
+    setBpmAccentFirstBeat(true);
+    setBpmSubdivision("1");
+    setBpmSoundStyle("classic");
+    setBpmError(null);
+    setTapTimes([]);
+    setPreviewBeat(1);
+    setPreviewSubdivision(0);
+    setIsBpmPreviewPlaying(false);
+  };
+
+  const closeBpmModal = () => {
+    setBpmSong(null);
+    setIsBpmPreviewPlaying(false);
+    if (bpmPreviewTimerRef.current) {
+      window.clearTimeout(bpmPreviewTimerRef.current);
+      bpmPreviewTimerRef.current = null;
+    }
+    setBpmError(null);
+  };
+
+  const scheduleBpmPreviewTick = () => {
+    const state = latestBpmStateRef.current;
+    const beatsPerBar = getBeatCount(state.timeSignature);
+    const subdivisionCount = Number(state.subdivision);
+    const currentBeat = bpmPreviewBeatRef.current;
+    const currentSubdivision = bpmPreviewSubdivisionRef.current;
+    const isDownbeat = currentBeat === 0 && currentSubdivision === 0;
+    const isSubdivisionTick = currentSubdivision > 0;
+
+    setPreviewBeat(currentBeat + 1);
+    setPreviewSubdivision(currentSubdivision);
+    playBpmPreviewClick(state.accentFirstBeat && isDownbeat, isSubdivisionTick);
+
+    const nextSubdivision = currentSubdivision + 1;
+
+    if (nextSubdivision >= subdivisionCount) {
+      bpmPreviewSubdivisionRef.current = 0;
+      bpmPreviewBeatRef.current = (currentBeat + 1) % beatsPerBar;
+    } else {
+      bpmPreviewSubdivisionRef.current = nextSubdivision;
+    }
+
+    bpmPreviewTimerRef.current = window.setTimeout(
+      scheduleBpmPreviewTick,
+      60_000 / latestBpmStateRef.current.bpm / subdivisionCount,
+    );
+  };
+
+  const toggleBpmPreview = () => {
+    if (isBpmPreviewPlaying) {
+      if (bpmPreviewTimerRef.current) {
+        window.clearTimeout(bpmPreviewTimerRef.current);
+        bpmPreviewTimerRef.current = null;
+      }
+      setIsBpmPreviewPlaying(false);
+      return;
+    }
+
+    bpmPreviewBeatRef.current = 0;
+    bpmPreviewSubdivisionRef.current = 0;
+    setIsBpmPreviewPlaying(true);
+    scheduleBpmPreviewTick();
+  };
+
+  const handleBpmTap = () => {
+    const now = performance.now();
+    const nextTapTimes = [...tapTimes.filter((time) => now - time <= TAP_RESET_MS), now].slice(-6);
+    setTapTimes(nextTapTimes);
+
+    if (nextTapTimes.length < 2) return;
+
+    const intervals = nextTapTimes.slice(1).map((time, index) => time - nextTapTimes[index]);
+    const averageInterval = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length;
+    setBpmDraft(clampSongBpm(60_000 / averageInterval));
+  };
+
+  const playBpmPreviewClick = (accent: boolean, subdivisionTick: boolean) => {
+    const audioWindow = window as AudioWindow;
+    const AudioContextCtor = audioWindow.AudioContext || audioWindow.webkitAudioContext;
+
+    if (!AudioContextCtor) return;
+
+    const context = audioContextRef.current ?? new AudioContextCtor();
+    audioContextRef.current = context;
+
+    if (context.state === "suspended") {
+      void context.resume();
+    }
+
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const now = context.currentTime;
+    const style = latestBpmStateRef.current.soundStyle;
+
+    if (style === "wood") {
+      oscillator.type = "square";
+      oscillator.frequency.value = accent ? 1320 : subdivisionTick ? 660 : 880;
+    } else if (style === "soft") {
+      oscillator.type = "sine";
+      oscillator.frequency.value = accent ? 880 : subdivisionTick ? 440 : 620;
+    } else {
+      oscillator.type = "triangle";
+      oscillator.frequency.value = accent ? 1600 : subdivisionTick ? 700 : 1000;
+    }
+
+    const volume = accent ? 0.55 : subdivisionTick ? 0.16 : 0.34;
+    const decay = style === "soft" ? 0.09 : 0.045;
+
+    gain.gain.setValueAtTime(volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + decay);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(now);
+    oscillator.stop(now + decay);
+  };
+
+  const applyBpmPreset = (preset: BpmPreset) => {
+    setBpmDraft(preset.bpm);
+    setBpmTimeSignature(preset.timeSignature);
+    setBpmAccentFirstBeat(preset.accentFirstBeat);
+    setBpmSubdivision(preset.subdivision.toString() as Subdivision);
+    setBpmSoundStyle(preset.soundStyle);
+    bpmPreviewBeatRef.current = 0;
+    bpmPreviewSubdivisionRef.current = 0;
+    setPreviewBeat(1);
+    setPreviewSubdivision(0);
+  };
+
+  const saveSongBpm = async () => {
+    if (!bpmSong) return;
+
+    setIsSavingBpm(true);
+    setBpmError(null);
+
+    try {
+      const response = await fetch(`/api/setlists/${setId}/songs/${bpmSong.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bpm: bpmDraft }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update BPM");
+      }
+
+      const updatedSong = (await response.json()) as SetlistSong;
+
+      queryClient.setQueryData<SetlistWithSongs>(
+        getGetSetlistQueryKey(setId),
+        (current) =>
+          current
+            ? {
+                ...current,
+                songs: current.songs.map((song) =>
+                  song.id === updatedSong.id ? { ...song, bpm: updatedSong.bpm } : song,
+                ),
+              }
+            : current,
+      );
+      queryClient.invalidateQueries({ queryKey: getGetSetlistQueryKey(setId) });
+      closeBpmModal();
+    } catch {
+      setBpmError("Nao foi possivel salvar o BPM dessa musica.");
+    } finally {
+      setIsSavingBpm(false);
+    }
+  };
+
+  const saveCurrentBpmAsPreset = async () => {
+    if (!bpmSong) return;
+
+    setIsSavingBpmPreset(true);
+    setBpmError(null);
+
+    try {
+      const response = await fetch("/api/bpm-presets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `${bpmSong.title} - ${bpmDraft} BPM`,
+          bpm: bpmDraft,
+          timeSignature: bpmTimeSignature,
+          accentFirstBeat: bpmAccentFirstBeat,
+          subdivision: Number(bpmSubdivision),
+          soundStyle: bpmSoundStyle,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save BPM preset");
+      }
+
+      const savedPreset = (await response.json()) as BpmPreset;
+      setBpmPresets((current) => [savedPreset, ...current]);
+    } catch {
+      setBpmError("Nao foi possivel salvar esse BPM como preset.");
+    } finally {
+      setIsSavingBpmPreset(false);
+    }
+  };
+
   const handleDeleteSetlist = () => {
     deleteMutation.mutate(
       { id: setId },
@@ -343,6 +692,12 @@ export default function SetlistDetail() {
           </div>
 
           <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+            <Button asChild variant="outline" className="gap-2">
+              <Link href="/bpm">
+                <Gauge className="w-4 h-4" />
+                Modo metronomo
+              </Link>
+            </Button>
             <Button
               variant="destructive"
               className="gap-2"
@@ -472,6 +827,16 @@ export default function SetlistDetail() {
                               </div>
 
                               <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-shrink-0"
+                                onClick={() => openBpmModal(song)}
+                              >
+                                <Gauge className="w-4 h-4 mr-2" />
+                                BPM
+                              </Button>
+
+                              <Button
                                 asChild
                                 variant="outline"
                                 size="sm"
@@ -542,6 +907,258 @@ export default function SetlistDetail() {
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? "Deleting..." : "Yes, Delete"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={bpmSong !== null}
+        onClose={closeBpmModal}
+        title="Configurar BPM da musica"
+        className="lg:max-w-5xl"
+      >
+        <div className="max-h-[78vh] space-y-6 overflow-y-auto pr-1">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Musica</p>
+            <h3 className="mt-1 text-2xl font-display font-bold">
+              {bpmSong?.title}
+            </h3>
+            <p className="text-muted-foreground">{bpmSong?.artist}</p>
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-white/5 bg-background/40 p-6">
+              <div className="text-sm font-medium uppercase tracking-[0.25em] text-muted-foreground">
+                BPM
+              </div>
+              <div className="mt-4 font-display text-8xl font-bold leading-none text-glow">
+                {bpmDraft}
+              </div>
+              <div className="mt-5 grid w-full max-w-sm grid-cols-3 gap-2">
+                <Button type="button" variant="secondary" onClick={() => setBpmDraft((value) => clampSongBpm(value - 1))}>
+                  -1
+                </Button>
+                <Button type="button" variant="outline" onClick={handleBpmTap}>
+                  Tap
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => setBpmDraft((value) => clampSongBpm(value + 1))}>
+                  +1
+                </Button>
+              </div>
+              <Button
+                type="button"
+                variant={isBpmPreviewPlaying ? "secondary" : "glow"}
+                size="lg"
+                onClick={toggleBpmPreview}
+                className="mt-5 w-full max-w-sm"
+              >
+                {isBpmPreviewPlaying ? (
+                  <Pause className="mr-2 h-5 w-5" />
+                ) : (
+                  <Play className="mr-2 h-5 w-5" />
+                )}
+                {isBpmPreviewPlaying ? "Pause" : "Play"}
+              </Button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <label className="text-sm font-medium text-muted-foreground">BPM ajustavel</label>
+                  <Input
+                    type="number"
+                    min={MIN_SONG_BPM}
+                    max={MAX_SONG_BPM}
+                    value={bpmDraft}
+                    onChange={(event) => {
+                      const value = Number(event.target.value);
+                      if (Number.isFinite(value)) {
+                        setBpmDraft(clampSongBpm(value));
+                      }
+                    }}
+                    className="h-10 w-24 text-center"
+                  />
+                </div>
+                <Slider
+                  min={MIN_SONG_BPM}
+                  max={MAX_SONG_BPM}
+                  step={1}
+                  value={[bpmDraft]}
+                  onValueChange={([value]) => setBpmDraft(value)}
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2">
+                  <span className="text-sm font-medium text-muted-foreground">Compasso</span>
+                  <Select value={bpmTimeSignature} onValueChange={(value) => setBpmTimeSignature(value as TimeSignature)}>
+                    <SelectTrigger className="h-12 rounded-xl border-2 bg-background/50">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeSignatureOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-sm font-medium text-muted-foreground">Som</span>
+                  <Select value={bpmSoundStyle} onValueChange={(value) => setBpmSoundStyle(value as SoundStyle)}>
+                    <SelectTrigger className="h-12 rounded-xl border-2 bg-background/50">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {soundOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-sm font-medium text-muted-foreground">Subdivisao simples</span>
+                  <Select value={bpmSubdivision} onValueChange={(value) => setBpmSubdivision(value as Subdivision)}>
+                    <SelectTrigger className="h-12 rounded-xl border-2 bg-background/50">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subdivisionOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+
+                <div className="flex items-center justify-between rounded-2xl border border-white/5 bg-background/40 p-4">
+                  <div>
+                    <div className="text-sm font-medium">Acento no primeiro tempo</div>
+                    <div className="text-xs text-muted-foreground">Realca o tempo 1.</div>
+                  </div>
+                  <Switch checked={bpmAccentFirstBeat} onCheckedChange={setBpmAccentFirstBeat} />
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-white/5 bg-background/40 p-4">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <Volume2 className="h-4 w-4 text-primary" />
+                    Pulso atual
+                  </div>
+                  <span className="text-sm text-muted-foreground">{bpmTimeSignature}</span>
+                </div>
+                <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${getBeatCount(bpmTimeSignature)}, minmax(0, 1fr))` }}>
+                  {Array.from({ length: getBeatCount(bpmTimeSignature) }, (_, index) => index + 1).map((beat) => (
+                    <div
+                      key={beat}
+                      className={cn(
+                        "flex aspect-square items-center justify-center rounded-2xl border text-2xl font-bold transition-all",
+                        previewBeat === beat && isBpmPreviewPlaying
+                          ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                          : "border-white/10 bg-secondary/50 text-muted-foreground",
+                        beat === 1 && bpmAccentFirstBeat && "ring-1 ring-primary/30",
+                      )}
+                    >
+                      {beat}
+                    </div>
+                  ))}
+                </div>
+                {Number(bpmSubdivision) > 1 ? (
+                  <div className="mt-4 flex justify-center gap-2">
+                    {Array.from({ length: Number(bpmSubdivision) }, (_, index) => (
+                      <span
+                        key={index}
+                        className={cn(
+                          "h-2 w-8 rounded-full bg-muted transition-colors",
+                          previewSubdivision === index && isBpmPreviewPlaying && "bg-primary",
+                        )}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 rounded-2xl border border-white/5 bg-background/40 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Presets salvos</p>
+                <p className="text-xs text-muted-foreground">
+                  Aplique um preset no BPM desta musica.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={saveCurrentBpmAsPreset}
+                disabled={isSavingBpmPreset}
+              >
+                <Save className="mr-2 h-4 w-4" />
+                {isSavingBpmPreset ? "Salvando..." : "Salvar preset"}
+              </Button>
+            </div>
+
+            {isLoadingBpmPresets ? (
+              <p className="rounded-xl border border-white/5 p-3 text-center text-sm text-muted-foreground">
+                Carregando presets...
+              </p>
+            ) : bpmPresets.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-white/10 p-3 text-center text-sm text-muted-foreground">
+                Nenhum preset salvo. Crie no modo metronomo ou salve este BPM.
+              </p>
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {bpmPresets.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => applyBpmPreset(preset)}
+                    className={cn(
+                      "rounded-xl border p-3 text-left transition-colors",
+                      bpmDraft === preset.bpm &&
+                        bpmTimeSignature === preset.timeSignature &&
+                        bpmSubdivision === preset.subdivision.toString() &&
+                        bpmSoundStyle === preset.soundStyle &&
+                        bpmAccentFirstBeat === preset.accentFirstBeat
+                        ? "border-primary bg-primary/10"
+                        : "border-white/10 bg-secondary/30 hover:border-primary/40",
+                    )}
+                  >
+                    <span className="block truncate text-sm font-semibold">
+                      {preset.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {preset.bpm} BPM - {preset.timeSignature}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {bpmError ? (
+            <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {bpmError}
+            </p>
+          ) : null}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="ghost" onClick={closeBpmModal}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={saveSongBpm} disabled={isSavingBpm}>
+              <Save className="mr-2 h-4 w-4" />
+              {isSavingBpm ? "Salvando..." : "Salvar na musica"}
             </Button>
           </div>
         </div>

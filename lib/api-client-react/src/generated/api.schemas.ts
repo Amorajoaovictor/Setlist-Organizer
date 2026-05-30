@@ -17,6 +17,91 @@ export interface SuccessResponse {
   success: boolean;
 }
 
+export type BpmPresetTimeSignature =
+  (typeof BpmPresetTimeSignature)[keyof typeof BpmPresetTimeSignature];
+
+export const BpmPresetTimeSignature = {
+  "2/4": "2/4",
+  "3/4": "3/4",
+  "4/4": "4/4",
+  "6/8": "6/8",
+} as const;
+
+export type BpmPresetSubdivision =
+  (typeof BpmPresetSubdivision)[keyof typeof BpmPresetSubdivision];
+
+export const BpmPresetSubdivision = {
+  NUMBER_1: 1,
+  NUMBER_2: 2,
+  NUMBER_4: 4,
+} as const;
+
+export type BpmPresetSoundStyle =
+  (typeof BpmPresetSoundStyle)[keyof typeof BpmPresetSoundStyle];
+
+export const BpmPresetSoundStyle = {
+  classic: "classic",
+  wood: "wood",
+  soft: "soft",
+} as const;
+
+export interface BpmPreset {
+  id: number;
+  name: string;
+  /**
+   * @minimum 30
+   * @maximum 300
+   */
+  bpm: number;
+  timeSignature: BpmPresetTimeSignature;
+  accentFirstBeat: boolean;
+  subdivision: BpmPresetSubdivision;
+  soundStyle: BpmPresetSoundStyle;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateBpmPresetInputTimeSignature =
+  (typeof CreateBpmPresetInputTimeSignature)[keyof typeof CreateBpmPresetInputTimeSignature];
+
+export const CreateBpmPresetInputTimeSignature = {
+  "2/4": "2/4",
+  "3/4": "3/4",
+  "4/4": "4/4",
+  "6/8": "6/8",
+} as const;
+
+export type CreateBpmPresetInputSubdivision =
+  (typeof CreateBpmPresetInputSubdivision)[keyof typeof CreateBpmPresetInputSubdivision];
+
+export const CreateBpmPresetInputSubdivision = {
+  NUMBER_1: 1,
+  NUMBER_2: 2,
+  NUMBER_4: 4,
+} as const;
+
+export type CreateBpmPresetInputSoundStyle =
+  (typeof CreateBpmPresetInputSoundStyle)[keyof typeof CreateBpmPresetInputSoundStyle];
+
+export const CreateBpmPresetInputSoundStyle = {
+  classic: "classic",
+  wood: "wood",
+  soft: "soft",
+} as const;
+
+export interface CreateBpmPresetInput {
+  name: string;
+  /**
+   * @minimum 30
+   * @maximum 300
+   */
+  bpm: number;
+  timeSignature: CreateBpmPresetInputTimeSignature;
+  accentFirstBeat: boolean;
+  subdivision: CreateBpmPresetInputSubdivision;
+  soundStyle: CreateBpmPresetInputSoundStyle;
+}
+
 export interface Setlist {
   id: number;
   name: string;
@@ -67,6 +152,15 @@ export interface AddSongInput {
   albumArt?: string | null;
 }
 
+export interface UpdateSetlistSongInput {
+  /**
+   * @minimum 30
+   * @maximum 300
+   * @nullable
+   */
+  bpm: number | null;
+}
+
 export interface ReorderSongsInput {
   /** Song IDs in the new order */
   songIds: number[];
@@ -82,6 +176,55 @@ export interface DeezerTrack {
   /** @nullable */
   albumArt?: string | null;
   album?: string;
+}
+
+export type SpleeterStatusProvider =
+  (typeof SpleeterStatusProvider)[keyof typeof SpleeterStatusProvider];
+
+export const SpleeterStatusProvider = {
+  "music-separator-spleeter": "music-separator-spleeter",
+} as const;
+
+export type SpleeterStatusSupportedStemsItem =
+  (typeof SpleeterStatusSupportedStemsItem)[keyof typeof SpleeterStatusSupportedStemsItem];
+
+export const SpleeterStatusSupportedStemsItem = {
+  vocals: "vocals",
+  drums: "drums",
+  bass: "bass",
+  guitar: "guitar",
+  other: "other",
+} as const;
+
+export type SpleeterStatusAudioPolicy =
+  (typeof SpleeterStatusAudioPolicy)[keyof typeof SpleeterStatusAudioPolicy];
+
+export const SpleeterStatusAudioPolicy = {
+  "client-direct-no-backend-storage": "client-direct-no-backend-storage",
+} as const;
+
+export interface SpleeterStatus {
+  provider: SpleeterStatusProvider;
+  configured: boolean;
+  /**
+   * Browser-callable Music Separator API base URL.
+   * @nullable
+   */
+  serviceUrl: string | null;
+  /**
+   * Browser-callable Music Separator API upload endpoint.
+   * @nullable
+   */
+  uploadUrl: string | null;
+  /** Multipart form field name used for the audio file. */
+  fileFieldName: string;
+  /** Multipart form field name used for the requested Spleeter stem model. */
+  stemsFieldName: string;
+  /** True when a NEXT_PUBLIC browser-safe API token is configured. */
+  publicApiKeyConfigured: boolean;
+  supportedStems: SpleeterStatusSupportedStemsItem[];
+  audioPolicy: SpleeterStatusAudioPolicy;
+  notes: string[];
 }
 
 export interface LyricLine {

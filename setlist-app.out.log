@@ -1,0 +1,13 @@
+
+> @workspace/setlist-app@0.0.0 dev C:\Users\amora\Setlist-Organizer\artifacts\setlist-app
+> next dev -H 0.0.0.0
+
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://0.0.0.0:3001
+- Environments: .env.local
+✓ Ready in 754ms
+[?25h
+C:\Users\amora\Setlist-Organizer\artifacts\setlist-app:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/setlist-app@0.0.0 dev: `next dev -H 0.0.0.0`
+Exit status 1

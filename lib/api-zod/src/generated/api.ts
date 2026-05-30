@@ -15,6 +15,57 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary List saved BPM presets
+ */
+export const listBpmPresetsResponseBpmMin = 30;
+export const listBpmPresetsResponseBpmMax = 300;
+
+export const ListBpmPresetsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  bpm: zod
+    .number()
+    .min(listBpmPresetsResponseBpmMin)
+    .max(listBpmPresetsResponseBpmMax),
+  timeSignature: zod.enum(["2/4", "3/4", "4/4", "6/8"]),
+  accentFirstBeat: zod.boolean(),
+  subdivision: zod.union([zod.literal(1), zod.literal(2), zod.literal(4)]),
+  soundStyle: zod.enum(["classic", "wood", "soft"]),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+export const ListBpmPresetsResponse = zod.array(ListBpmPresetsResponseItem);
+
+/**
+ * @summary Create a BPM preset
+ */
+export const createBpmPresetBodyBpmMin = 30;
+export const createBpmPresetBodyBpmMax = 300;
+
+export const CreateBpmPresetBody = zod.object({
+  name: zod.string(),
+  bpm: zod
+    .number()
+    .min(createBpmPresetBodyBpmMin)
+    .max(createBpmPresetBodyBpmMax),
+  timeSignature: zod.enum(["2/4", "3/4", "4/4", "6/8"]),
+  accentFirstBeat: zod.boolean(),
+  subdivision: zod.union([zod.literal(1), zod.literal(2), zod.literal(4)]),
+  soundStyle: zod.enum(["classic", "wood", "soft"]),
+});
+
+/**
+ * @summary Delete a BPM preset
+ */
+export const DeleteBpmPresetParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteBpmPresetResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
  * @summary List all setlists
  */
 export const ListSetlistsResponseItem = zod.object({
@@ -98,6 +149,38 @@ export const AddSongToSetlistParams = zod.object({
 });
 
 export const AddSongToSetlistBody = zod.object({
+  title: zod.string(),
+  artist: zod.string(),
+  durationMs: zod.number(),
+  bpm: zod.number().nullish(),
+  deezerId: zod.string().optional(),
+  spotifyId: zod.string().optional(),
+  albumArt: zod.string().nullish(),
+});
+
+/**
+ * @summary Update a song in a setlist
+ */
+export const UpdateSetlistSongParams = zod.object({
+  id: zod.coerce.number(),
+  songId: zod.coerce.number(),
+});
+
+export const updateSetlistSongBodyBpmMin = 30;
+export const updateSetlistSongBodyBpmMax = 300;
+
+export const UpdateSetlistSongBody = zod.object({
+  bpm: zod
+    .number()
+    .min(updateSetlistSongBodyBpmMin)
+    .max(updateSetlistSongBodyBpmMax)
+    .nullable(),
+});
+
+export const UpdateSetlistSongResponse = zod.object({
+  id: zod.number(),
+  setlistId: zod.number(),
+  position: zod.number(),
   title: zod.string(),
   artist: zod.string(),
   durationMs: zod.number(),
@@ -270,3 +353,35 @@ export const SearchDeezerTracksResponseItem = zod.object({
 export const SearchDeezerTracksResponse = zod.array(
   SearchDeezerTracksResponseItem,
 );
+
+/**
+ * @summary Get Music Separator API integration status
+ */
+export const GetSpleeterStatusResponse = zod.object({
+  provider: zod.enum(["music-separator-spleeter"]),
+  configured: zod.boolean(),
+  serviceUrl: zod
+    .string()
+    .nullable()
+    .describe("Browser-callable Music Separator API base URL."),
+  uploadUrl: zod
+    .string()
+    .nullable()
+    .describe("Browser-callable Music Separator API upload endpoint."),
+  fileFieldName: zod
+    .string()
+    .describe("Multipart form field name used for the audio file."),
+  stemsFieldName: zod
+    .string()
+    .describe(
+      "Multipart form field name used for the requested Spleeter stem model.",
+    ),
+  publicApiKeyConfigured: zod
+    .boolean()
+    .describe("True when a NEXT_PUBLIC browser-safe API token is configured."),
+  supportedStems: zod.array(
+    zod.enum(["vocals", "drums", "bass", "guitar", "other"]),
+  ),
+  audioPolicy: zod.enum(["client-direct-no-backend-storage"]),
+  notes: zod.array(zod.string()),
+});

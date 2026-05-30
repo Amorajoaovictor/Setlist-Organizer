@@ -7,6 +7,14 @@
  */
 
 export * from "./addSongInput";
+export * from "./bpmPreset";
+export * from "./bpmPresetSoundStyle";
+export * from "./bpmPresetSubdivision";
+export * from "./bpmPresetTimeSignature";
+export * from "./createBpmPresetInput";
+export * from "./createBpmPresetInputSoundStyle";
+export * from "./createBpmPresetInputSubdivision";
+export * from "./createBpmPresetInputTimeSignature";
 export * from "./createSetlistInput";
 export * from "./deezerTrack";
 export * from "./errorResponse";
@@ -22,5 +30,10 @@ export * from "./setlistSong";
 export * from "./setlistWithSongs";
 export * from "./songLyrics";
 export * from "./songLyricsSource";
+export * from "./spleeterStatus";
+export * from "./spleeterStatusAudioPolicy";
+export * from "./spleeterStatusProvider";
+export * from "./spleeterStatusSupportedStemsItem";
 export * from "./successResponse";
 export * from "./updateSetlistInput";
+export * from "./updateSetlistSongInput";

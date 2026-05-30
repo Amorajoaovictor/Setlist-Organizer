@@ -22,6 +22,7 @@ import type { SetlistSong } from "@workspace/api-client-react";
 
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
+import { KaraokeStemPanel } from "@/components/KaraokeStemPanel";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -133,6 +134,7 @@ export function LyricsSyncPanel({
   const [metronomeOn, setMetronomeOn] = useState(false);
   const [countIn, setCountIn] = useState<number | null>(null);
   const [localAudioUrl, setLocalAudioUrl] = useState("");
+  const [localAudioFile, setLocalAudioFile] = useState<File | null>(null);
   const [audioDurationMs, setAudioDurationMs] = useState(0);
   const [waveformBars, setWaveformBars] = useState<number[]>(() =>
     createFallbackWaveform(WAVEFORM_BAR_COUNT, 1),
@@ -167,6 +169,7 @@ export function LyricsSyncPanel({
     setSelectedLine(0);
     setElapsedMs(0);
     setLocalAudioUrl("");
+    setLocalAudioFile(null);
 
     if (!song || !storageKey) {
       setDraft(emptyDraft);
@@ -563,6 +566,7 @@ export function LyricsSyncPanel({
 
     const objectUrl = URL.createObjectURL(file);
     setLocalAudioUrl(objectUrl);
+    setLocalAudioFile(file);
     setDraft((current) => ({ ...current, audioUrl: "" }));
   }
 
@@ -843,6 +847,11 @@ export function LyricsSyncPanel({
                     </p>
                   </div>
                 </div>
+                <KaraokeStemPanel
+                  audioFile={localAudioFile}
+                  hasPreviewSource={hasPreviewSource}
+                  hasLocalAudio={Boolean(localAudioUrl)}
+                />
               </div>
             </div>
 

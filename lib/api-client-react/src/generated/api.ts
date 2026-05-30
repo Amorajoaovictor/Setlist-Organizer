@@ -18,6 +18,8 @@ import type {
 
 import type {
   AddSongInput,
+  BpmPreset,
+  CreateBpmPresetInput,
   CreateSetlistInput,
   DeezerTrack,
   ErrorResponse,
@@ -30,8 +32,10 @@ import type {
   SetlistSong,
   SetlistWithSongs,
   SongLyrics,
+  SpleeterStatus,
   SuccessResponse,
   UpdateSetlistInput,
+  UpdateSetlistSongInput,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -117,6 +121,251 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List saved BPM presets
+ */
+export const getListBpmPresetsUrl = () => {
+  return `/api/bpm-presets`;
+};
+
+export const listBpmPresets = async (
+  options?: RequestInit,
+): Promise<BpmPreset[]> => {
+  return customFetch<BpmPreset[]>(getListBpmPresetsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListBpmPresetsQueryKey = () => {
+  return [`/api/bpm-presets`] as const;
+};
+
+export const getListBpmPresetsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listBpmPresets>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listBpmPresets>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListBpmPresetsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listBpmPresets>>> = ({
+    signal,
+  }) => listBpmPresets({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listBpmPresets>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListBpmPresetsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listBpmPresets>>
+>;
+export type ListBpmPresetsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List saved BPM presets
+ */
+
+export function useListBpmPresets<
+  TData = Awaited<ReturnType<typeof listBpmPresets>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listBpmPresets>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListBpmPresetsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a BPM preset
+ */
+export const getCreateBpmPresetUrl = () => {
+  return `/api/bpm-presets`;
+};
+
+export const createBpmPreset = async (
+  createBpmPresetInput: CreateBpmPresetInput,
+  options?: RequestInit,
+): Promise<BpmPreset> => {
+  return customFetch<BpmPreset>(getCreateBpmPresetUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createBpmPresetInput),
+  });
+};
+
+export const getCreateBpmPresetMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBpmPreset>>,
+    TError,
+    { data: BodyType<CreateBpmPresetInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createBpmPreset>>,
+  TError,
+  { data: BodyType<CreateBpmPresetInput> },
+  TContext
+> => {
+  const mutationKey = ["createBpmPreset"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createBpmPreset>>,
+    { data: BodyType<CreateBpmPresetInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createBpmPreset(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateBpmPresetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createBpmPreset>>
+>;
+export type CreateBpmPresetMutationBody = BodyType<CreateBpmPresetInput>;
+export type CreateBpmPresetMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a BPM preset
+ */
+export const useCreateBpmPreset = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBpmPreset>>,
+    TError,
+    { data: BodyType<CreateBpmPresetInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createBpmPreset>>,
+  TError,
+  { data: BodyType<CreateBpmPresetInput> },
+  TContext
+> => {
+  return useMutation(getCreateBpmPresetMutationOptions(options));
+};
+
+/**
+ * @summary Delete a BPM preset
+ */
+export const getDeleteBpmPresetUrl = (id: number) => {
+  return `/api/bpm-presets/${id}`;
+};
+
+export const deleteBpmPreset = async (
+  id: number,
+  options?: RequestInit,
+): Promise<SuccessResponse> => {
+  return customFetch<SuccessResponse>(getDeleteBpmPresetUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteBpmPresetMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteBpmPreset>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteBpmPreset>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteBpmPreset"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteBpmPreset>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteBpmPreset(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteBpmPresetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteBpmPreset>>
+>;
+
+export type DeleteBpmPresetMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete a BPM preset
+ */
+export const useDeleteBpmPreset = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteBpmPreset>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteBpmPreset>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteBpmPresetMutationOptions(options));
+};
 
 /**
  * @summary List all setlists
@@ -622,6 +871,94 @@ export const useAddSongToSetlist = <
   TContext
 > => {
   return useMutation(getAddSongToSetlistMutationOptions(options));
+};
+
+/**
+ * @summary Update a song in a setlist
+ */
+export const getUpdateSetlistSongUrl = (id: number, songId: number) => {
+  return `/api/setlists/${id}/songs/${songId}`;
+};
+
+export const updateSetlistSong = async (
+  id: number,
+  songId: number,
+  updateSetlistSongInput: UpdateSetlistSongInput,
+  options?: RequestInit,
+): Promise<SetlistSong> => {
+  return customFetch<SetlistSong>(getUpdateSetlistSongUrl(id, songId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateSetlistSongInput),
+  });
+};
+
+export const getUpdateSetlistSongMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSetlistSong>>,
+    TError,
+    { id: number; songId: number; data: BodyType<UpdateSetlistSongInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateSetlistSong>>,
+  TError,
+  { id: number; songId: number; data: BodyType<UpdateSetlistSongInput> },
+  TContext
+> => {
+  const mutationKey = ["updateSetlistSong"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateSetlistSong>>,
+    { id: number; songId: number; data: BodyType<UpdateSetlistSongInput> }
+  > = (props) => {
+    const { id, songId, data } = props ?? {};
+
+    return updateSetlistSong(id, songId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateSetlistSongMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateSetlistSong>>
+>;
+export type UpdateSetlistSongMutationBody = BodyType<UpdateSetlistSongInput>;
+export type UpdateSetlistSongMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update a song in a setlist
+ */
+export const useUpdateSetlistSong = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSetlistSong>>,
+    TError,
+    { id: number; songId: number; data: BodyType<UpdateSetlistSongInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateSetlistSong>>,
+  TError,
+  { id: number; songId: number; data: BodyType<UpdateSetlistSongInput> },
+  TContext
+> => {
+  return useMutation(getUpdateSetlistSongMutationOptions(options));
 };
 
 /**
@@ -1149,6 +1486,81 @@ export function useSearchDeezerTracks<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getSearchDeezerTracksQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get Music Separator API integration status
+ */
+export const getGetSpleeterStatusUrl = () => {
+  return `/api/spleeter/status`;
+};
+
+export const getSpleeterStatus = async (
+  options?: RequestInit,
+): Promise<SpleeterStatus> => {
+  return customFetch<SpleeterStatus>(getGetSpleeterStatusUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSpleeterStatusQueryKey = () => {
+  return [`/api/spleeter/status`] as const;
+};
+
+export const getGetSpleeterStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSpleeterStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getSpleeterStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetSpleeterStatusQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSpleeterStatus>>
+  > = ({ signal }) => getSpleeterStatus({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSpleeterStatus>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSpleeterStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSpleeterStatus>>
+>;
+export type GetSpleeterStatusQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get Music Separator API integration status
+ */
+
+export function useGetSpleeterStatus<
+  TData = Awaited<ReturnType<typeof getSpleeterStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getSpleeterStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSpleeterStatusQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -48,3 +48,17 @@ model SetlistSongLyrics {
 
   @@map("setlist_song_lyrics")
 }
+
+model BpmPreset {
+  id              Int      @id @default(autoincrement())
+  name            String
+  bpm             Int
+  timeSignature   String   @default("4/4") @map("time_signature")
+  accentFirstBeat Boolean  @default(true) @map("accent_first_beat")
+  subdivision     Int      @default(1)
+  soundStyle      String   @default("classic") @map("sound_style")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("bpm_presets")
+}

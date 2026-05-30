@@ -1,7 +1,7 @@
  "use client";
 
 import Link from "next/link";
-import { AudioWaveform } from "lucide-react";
+import { AudioWaveform, Gauge } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
@@ -29,6 +29,10 @@ export function Header() {
             <nav className="flex items-center gap-6">
               <Link href="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                 My Setlists
+              </Link>
+              <Link href="/bpm" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                <Gauge className="h-4 w-4" />
+                BPM
               </Link>
               {status === "authenticated" ? (
                 <div className="flex items-center gap-3">

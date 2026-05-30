@@ -15,6 +15,10 @@ tags:
     description: Deezer track search
   - name: lyrics
     description: Synced lyrics search and storage
+  - name: spleeter
+    description: Music Separator API karaoke stem integration backed by Spleeter
+  - name: bpm-presets
+    description: Saved metronome BPM presets
 paths:
   /healthz:
     get:
@@ -28,6 +32,63 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /bpm-presets:
+    get:
+      operationId: listBpmPresets
+      tags: [bpm-presets]
+      summary: List saved BPM presets
+      responses:
+        "200":
+          description: List of BPM presets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BpmPreset"
+    post:
+      operationId: createBpmPreset
+      tags: [bpm-presets]
+      summary: Create a BPM preset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBpmPresetInput"
+      responses:
+        "201":
+          description: Created BPM preset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BpmPreset"
+
+  /bpm-presets/{id}:
+    delete:
+      operationId: deleteBpmPreset
+      tags: [bpm-presets]
+      summary: Delete a BPM preset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Preset not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /setlists:
     get:
@@ -158,6 +219,41 @@ paths:
                 $ref: "#/components/schemas/SetlistSong"
 
   /setlists/{id}/songs/{songId}:
+    patch:
+      operationId: updateSetlistSong
+      tags: [setlists]
+      summary: Update a song in a setlist
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSetlistSongInput"
+      responses:
+        "200":
+          description: Updated song
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SetlistSong"
+        "404":
+          description: Song not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
     delete:
       operationId: removeSongFromSetlist
       tags: [setlists]
@@ -328,6 +424,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /spleeter/status:
+    get:
+      operationId: getSpleeterStatus
+      tags: [spleeter]
+      summary: Get Music Separator API integration status
+      responses:
+        "200":
+          description: Spleeter integration status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpleeterStatus"
+
 components:
   schemas:
     HealthStatus:
@@ -353,6 +462,73 @@ components:
           type: boolean
       required:
         - success
+
+    BpmPreset:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        bpm:
+          type: integer
+          minimum: 30
+          maximum: 300
+        timeSignature:
+          type: string
+          enum: ["2/4", "3/4", "4/4", "6/8"]
+        accentFirstBeat:
+          type: boolean
+        subdivision:
+          type: integer
+          enum: [1, 2, 4]
+        soundStyle:
+          type: string
+          enum: [classic, wood, soft]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - bpm
+        - timeSignature
+        - accentFirstBeat
+        - subdivision
+        - soundStyle
+        - createdAt
+        - updatedAt
+
+    CreateBpmPresetInput:
+      type: object
+      properties:
+        name:
+          type: string
+        bpm:
+          type: integer
+          minimum: 30
+          maximum: 300
+        timeSignature:
+          type: string
+          enum: ["2/4", "3/4", "4/4", "6/8"]
+        accentFirstBeat:
+          type: boolean
+        subdivision:
+          type: integer
+          enum: [1, 2, 4]
+        soundStyle:
+          type: string
+          enum: [classic, wood, soft]
+      required:
+        - name
+        - bpm
+        - timeSignature
+        - accentFirstBeat
+        - subdivision
+        - soundStyle
 
     Setlist:
       type: object
@@ -472,6 +648,18 @@ components:
         - artist
         - durationMs
 
+    UpdateSetlistSongInput:
+      type: object
+      properties:
+        bpm:
+          type:
+            - integer
+            - "null"
+          minimum: 30
+          maximum: 300
+      required:
+        - bpm
+
     ReorderSongsInput:
       type: object
       properties:
@@ -509,6 +697,57 @@ components:
         - title
         - artist
         - durationMs
+
+    SpleeterStatus:
+      type: object
+      properties:
+        provider:
+          type: string
+          enum: [music-separator-spleeter]
+        configured:
+          type: boolean
+        serviceUrl:
+          type:
+            - string
+            - "null"
+          description: Browser-callable Music Separator API base URL.
+        uploadUrl:
+          type:
+            - string
+            - "null"
+          description: Browser-callable Music Separator API upload endpoint.
+        fileFieldName:
+          type: string
+          description: Multipart form field name used for the audio file.
+        stemsFieldName:
+          type: string
+          description: Multipart form field name used for the requested Spleeter stem model.
+        publicApiKeyConfigured:
+          type: boolean
+          description: True when a NEXT_PUBLIC browser-safe API token is configured.
+        supportedStems:
+          type: array
+          items:
+            type: string
+            enum: [vocals, drums, bass, guitar, other]
+        audioPolicy:
+          type: string
+          enum: [client-direct-no-backend-storage]
+        notes:
+          type: array
+          items:
+            type: string
+      required:
+        - provider
+        - configured
+        - serviceUrl
+        - uploadUrl
+        - fileFieldName
+        - stemsFieldName
+        - publicApiKeyConfigured
+        - supportedStems
+        - audioPolicy
+        - notes
 
     LyricLine:
       type: object

@@ -7,3 +7,4 @@ export type {
 } from "@prisma/client";
 
 export * from "./lyrics";
+export * from "./bpm-presets";
