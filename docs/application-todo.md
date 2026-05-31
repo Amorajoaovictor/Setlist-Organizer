@@ -7,7 +7,6 @@ Esta lista organiza o backlog funcional e tecnico da aplicacao a partir do estad
 - [ ] Manter `lib/api-spec/openapi.yaml` sincronizado com toda mudanca de API.
 - [ ] Regenerar `lib/api-client-react` e `lib/api-zod` depois de alterar o OpenAPI.
 - [ ] Definir estrategia de migracoes Prisma para evolucao do schema.
-- [ ] Decidir quando remover ou arquivar o Express legado em `artifacts/api-server`.
 - [ ] Padronizar tratamento de erros da API com codigos e mensagens consistentes.
 
 ## Autenticacao e Usuario

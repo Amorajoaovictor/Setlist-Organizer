@@ -11,8 +11,6 @@ SetlistOS is a Next.js app for organizing band setlists, searching Deezer tracks
 - Zod
 - OpenAPI/Orval generated API client
 
-The app no longer uses Replit auth or Replit-specific runtime dependencies.
-
 ## Environment
 
 Create a local env file from the example:
@@ -86,4 +84,4 @@ GET    /api/deezer/search?q=...
 pnpm --filter @workspace/setlist-app run build
 ```
 
-The legacy Express API server remains in `artifacts/api-server`, also using Prisma, but the primary app path is the Next app in `artifacts/setlist-app`.
+The primary app path is the Next app in `artifacts/setlist-app`, which serves both the UI and API routes.

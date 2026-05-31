@@ -13,7 +13,6 @@ O MVP tambem define um caminho de produto alem do que ja esta implementado: aute
 O repositorio e um workspace pnpm com TypeScript.
 
 - `artifacts/setlist-app`: aplicacao principal em Next.js App Router. Serve UI e API routes em `/api`.
-- `artifacts/api-server`: servidor Express 5 legado com rotas equivalentes de setlists e Deezer. Nao e o caminho principal.
 - `lib/db`: Prisma schema e cliente compartilhado.
 - `lib/api-spec`: contrato OpenAPI usado por Orval.
 - `lib/api-client-react`: cliente gerado com hooks React Query.
@@ -358,7 +357,7 @@ O MVP deve focar em:
 
 ## Diretrizes para Agentes Futuros
 
-- Trate `artifacts/setlist-app` como aplicacao principal. Nao implemente features novas no Express legado sem pedido explicito.
+- Trate `artifacts/setlist-app` como aplicacao principal.
 - Preserve o contrato OpenAPI como fonte para clientes gerados.
 - Nao edite arquivos gerados em `lib/api-client-react/src/generated` ou `lib/api-zod/src/generated`; regenere a partir do spec.
 - Ao alterar dados persistidos, atualize `lib/db/prisma/schema.prisma` e documente migracao/push esperado.
