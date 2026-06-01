@@ -766,7 +766,7 @@ export default function SetlistDetail() {
 
         <div className="grid min-w-0 grid-cols-1 gap-6 pb-20 lg:grid-cols-3 lg:gap-8">
           {/* Main Song List Column */}
-          <div className="flex min-w-0 flex-col gap-6 lg:col-span-2">
+          <div className="flex min-w-0 flex-col gap-6">
             <div className="flex items-center justify-between px-2">
               <h2 className="text-xl font-display font-bold flex items-center gap-2">
                 Tracks{" "}
