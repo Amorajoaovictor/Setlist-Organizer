@@ -756,6 +756,14 @@ export default function SetlistDetail() {
           </div>
         </div>
 
+        <div className="mb-6 lg:hidden">
+          <DeezerSearch
+            onAddTrack={handleAddTrack}
+            isAdding={addSongMutation.isPending}
+            variant="accordion"
+          />
+        </div>
+
         <div className="grid min-w-0 grid-cols-1 gap-6 pb-20 lg:grid-cols-3 lg:gap-8">
           {/* Main Song List Column */}
           <div className="flex min-w-0 flex-col gap-6 lg:col-span-2">
@@ -773,7 +781,8 @@ export default function SetlistDetail() {
                 <Music className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-bold mb-2">No tracks yet</h3>
                 <p className="text-muted-foreground">
-                  Search Deezer on the right to add songs to this setlist.
+                  Use a busca acima no mobile ou à direita no desktop para
+                  adicionar músicas a esta setlist.
                 </p>
               </div>
             ) : (
@@ -902,7 +911,7 @@ export default function SetlistDetail() {
           </div>
 
           {/* Deezer Search Sidebar */}
-          <div className="min-w-0 lg:sticky lg:top-28 lg:col-span-1 lg:h-[calc(100vh-250px)]">
+          <div className="hidden min-w-0 lg:sticky lg:top-28 lg:col-span-1 lg:block lg:h-[calc(100vh-250px)]">
             <DeezerSearch
               onAddTrack={handleAddTrack}
               isAdding={addSongMutation.isPending}
