@@ -71,7 +71,11 @@ export function DeezerSearch({
         </div>
         <div className="relative">
           <Input
-            placeholder="Buscar no Deezer para adicionar música..."
+            placeholder={
+              isAccordion
+                ? "Buscar no Deezer para adicionar música..."
+                : "Search Deezer..."
+            }
             value={query}
             onFocus={() => setIsOpen(true)}
             onChange={(event) => {
